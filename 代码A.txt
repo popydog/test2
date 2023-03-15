@@ -1,0 +1,2856 @@
+package chinatelecom.com.ctapmsdk;
+
+import android.content.Context;
+import android.content.res.Configuration;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
+import android.os.Parcelable;
+import android.text.TextUtils;
+import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.ViewStub;
+import android.widget.AbsListView;
+import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.hexin.android.component.ColumnDragableListView;
+import com.hexin.android.component.ColumnDragableListView.OnHexinItemLongClickListener;
+import com.hexin.android.component.ColumnDragableTable;
+import com.hexin.android.component.DragableListViewItem;
+import com.hexin.android.component.DragableListViewItemExt;
+import com.hexin.android.component.SelfStockPresenter;
+import com.hexin.android.component.SortItemDataState;
+import com.hexin.android.component.hangqing.category.CategoryDataProcessor;
+import com.hexin.android.component.hangqing.category.OnCategoryChangeListener;
+import com.hexin.android.component.hangqing.category.model.CategoryConfig;
+import com.hexin.android.component.hangqing.DraggableAttractListView;
+import com.hexin.android.component.hangqing.HQDataConstant;
+import com.hexin.android.component.hangqing.HangQingSelfCodeTableContainer;
+import com.hexin.android.component.hangqing.SelfStockGestureHelper;
+import com.hexin.android.component.hangqing.SelfStockRequestHelper;
+import com.hexin.android.component.firstpage.feedflow.hs.HsConstants;
+import com.hexin.android.component.hangqing.gangmeigu.NASDAQHelper;
+import com.hexin.android.component.hangqing.hkus.HkUsMarketUtil;
+import com.hexin.android.component.hangqing.multistock.MultiStockProcessor;
+import com.hexin.android.component.hangqing.selfstock.ARequestHelper;
+import com.hexin.android.component.hangqing.selfstock.SelfStockListView;
+import com.hexin.android.component.hangqing.selfstock.SelfStockListViewContent;
+import com.hexin.android.component.hangqing.selfstock.SelfStockListViewHeader;
+import com.hexin.android.component.hangqing.selfstock.SelfStockListViewItem;
+import com.hexin.android.component.hangqing.selfstock.SelfStockUSPanqianClinet;
+import com.hexin.android.component.model.AndroidColumnDragableTableModel;
+import com.hexin.android.component.model.SelfStockBean;
+import com.hexin.android.component.model.USSelfCodeColumnTableModel;
+import com.hexin.android.component.selfCode.AddSelfHeadManager;
+import com.hexin.android.component.selfCode.AddSelfHeadUpdateListener;
+import com.hexin.android.component.selfCode.tableHead.CommonKt;
+import com.hexin.android.component.selfCode.tableHead.repo.PCHeadDataCallBack;
+import com.hexin.android.component.selfCode.tableHead.repo.RepositoryInstanceHolder;
+import com.hexin.android.component.selfCode.tableHead.repo.WencaiDataModel;
+import com.hexin.android.component.selfCode.tableHead.repo.WencaiHeadDataManager;
+import com.hexin.android.component.selfCode.tableHead.model.BaseHead;
+import com.hexin.android.component.selfCode.tableHead.model.SocketHead;
+import com.hexin.android.component.selfCode.tableHead.model.WencaiHead;
+import com.hexin.android.component.selfCode.tableHead.request.SelfCfqRequester;
+import com.hexin.android.component.stockgroup.BanKuaiModel;
+import com.hexin.android.component.stockgroup.MarketFilter;
+import com.hexin.android.component.stockgroup.StockGroupConstant;
+import com.hexin.android.component.stockgroup.StockGroupManager;
+import com.hexin.android.component.stockgroup.StockGroupToastDialog;
+import com.hexin.android.component.stockgroup.chicangstock.ISelfCodeHeaderPresent;
+import com.hexin.android.component.stockgroup.chicangstock.SelfCodeHeaderAccount;
+import com.hexin.android.component.stockgroup.chicangstock.SelfCodeHeaderPresentImpl;
+import com.hexin.android.component.stockgroup.horizontal.HorizontalStockGroupUtil;
+import com.hexin.android.component.yidong.dpbidyd.common.SettingDialogHelper;
+import com.hexin.android.search.legacy.MultipleSearchUtil;
+import com.hexin.android.service.CBASConstants;
+import com.hexin.android.theme.ThemeManager;
+import com.hexin.android.ui.framework.AbstractUIManager;
+import com.hexin.android.view.TabWidget;
+import com.hexin.android.weituo.WeituoConstant;
+import com.hexin.android.weituo.hstrade.base.xcs.local.calculate.LocalCalUtil;
+import com.hexin.android.weituo.interfaces.IChiCangRefreshable;
+import com.hexin.android.weituo.kh.SelfCodeKaiHuEntryMgr;
+import com.hexin.android.weituo.setting.utils.WeiTuoSettingUtil;
+import com.hexin.android.weituo.yyb.AccountLifeStateManager;
+import com.hexin.android.weituo.yyb.BaseAccount;
+import com.hexin.app.event.EQEvent;
+import com.hexin.app.event.action.EQAction;
+import com.hexin.app.event.action.EQGotoFrameAction;
+import com.hexin.app.event.action.EQGotoUnknownFrameAction;
+import com.hexin.app.event.param.EQGotoParam;
+import com.hexin.app.event.param.EQParam;
+import com.hexin.app.event.struct.EQBasicStockInfo;
+import com.hexin.app.event.struct.TitleLabelListStruct;
+import com.hexin.hxutils.util.SPUtils;
+import com.hexin.middleware.GlobalHandler;
+import com.hexin.middleware.MiddlewareProxy;
+import com.hexin.middleware.ProtocalDef;
+import com.hexin.middleware.QueueManagement;
+import com.hexin.middleware.data.StuffBaseStruct;
+import com.hexin.middleware.data.mobile.StuffTableStruct;
+import com.hexin.middleware.data.realdata.model.RTDataSubscriber.RTReqInfo;
+import com.hexin.middleware.database.SelfStockChangeListener;
+import com.hexin.middleware.database.StockInfo;
+import com.hexin.middleware.session.ChannelAuth;
+import com.hexin.middleware.session.RequestEmitter;
+import com.hexin.middleware.session.UserChangeListener;
+import com.hexin.performancemonitor.CustomExceptionSave;
+import com.hexin.plat.android.HexinApplication;
+import com.hexin.plat.android.PerformanceProxy;
+import com.hexin.plat.android.R;
+import com.hexin.uicomponents.theme.ColorBlindnessManager;
+import com.hexin.uicomponents.theme.CommonThemeManager;
+import com.hexin.util.HXLog;
+import com.hexin.util.HexinCBASUtil;
+import com.hexin.util.HexinThreadPool;
+import com.hexin.util.HexinUtils;
+import com.hexin.util.Log;
+import com.hexin.util.bubblelayout.ArrowDirection;
+import com.hexin.util.bubblelayout.BubbleLayout;
+import com.hexin.util.business.ChiCangSyncManagerUtil;
+import com.hexin.util.config.EQConstants;
+import com.hexin.util.config.SPConfig;
+import com.hexin.util.date.ServerTimeProvider;
+import com.hexin.util.guide.AutoDismissPopWindow;
+import com.hexin.util.guide.GuideManager;
+import com.hexin.util.guide.ShowGuidePopRunnable;
+import com.hxcommonlibrary.utils.CommonUtils;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+/**
+ * 自选股页面的列表展示部分。
+ */
+@SuppressWarnings("all")
+public class HangQingSelfcodeTableLandscape extends ColumnDragableTable
+        implements SelfStockChangeListener, UserChangeListener, SelfCodeHeaderAccount.OnCCGDataChangeListener,
+        WencaiHeadDataManager.WencaiDataCallBack, IChiCangRefreshable, PCHeadDataCallBack,
+        ColumnDragableListView.OnHScrollListener, AddSelfHeadUpdateListener,
+        DragableListViewItemExt.ResetWencaiSortListener, OnCategoryChangeListener {
+
+
+    public static final String UNDERLINE = "_";
+    public static final String DASH = "--";
+    public static final String TAG = "HangQingSelfcodeTableLandscape";
+    private static final int CTRL_ID = ProtocalDef.CTRLID_HANGQING_SELFCODE_TABLE;
+    private static final int mPageId = ProtocalDef.PAGEID_ZXG_LANDSCAPE;
+    private static final String DEFAULT_REQUEST_MESSAGE = "sortorder=0\nsortid=-1";
+    public static final int MOVE_TO_TOP = 1; //置顶
+    public static final int MOVE_TO_BOTTOM = 2; //置底
+    public static final int OFFSET_THREE = 3;
+    public static final int FOUR = 4;
+    public static final int FIVE = 5;
+    private static final String LOGIN_CBAS = ".login";
+    private static final String RZRQ_HEAD_NAME = "融资融券标志";
+    private static final String MARKET_HEAD_NAME = "市场";
+    private static final int HEAD_SHOW_TYPE_FLAG = 0x000F0000;
+    public static final int SHOW_TYPE_DETAIL = 0x00010000;
+    public static final int SHOW_TYPE_LINK = 0x00020000;
+
+    // 自选页面有两个默认添加的表头（股票标识，市场id）
+    protected static final int DEFAULT_HEAD_SIZE = 2;
+
+    private static final int SCROLL_TO_POSITION = 7; //列表项如果大于7.将setSelection到7，然后滚动
+
+    private static final int NOUGAT = 24;
+    /*
+     * 股票代码对应的DATA_ID = 4, 股票名称对应的DATA_ID = 55, 根据这些ID去获取数据对应的索引；
+     */
+    private static final int STOCK_CODE_DATA_ID = 4;
+    protected static final int STOCK_NAME_DATA_ID = 55;
+    private static final long SYNC_DELTA_TIME = 12 * 60 * 60 * 1000L;
+
+    private static final int[] DISABLE_SORT_ID = {BaseHead.ADD_SELF_ID_TIME,
+            BaseHead.ADD_SELF_ID_PRICE, BaseHead.ADD_SELF_ID_PROFIT};
+    private static final WencaiHeadDataManager sWencaiHeadDataManager = new WencaiHeadDataManager();
+
+    // ~ 成员变量区块
+    // =========================================================================
+    private int mFrameId;
+    private int mPageType;
+    private final int defaultSortId = -1;
+    private StuffTableStruct tableStruct;
+    private final Map<String, HQRowData> hqData = new HashMap<>();
+    private final Vector<StockInfo> selfStockInfoList = new Vector<>(); // 本地的自选股列表
+    protected boolean isFirst = true; // 表示是缓存请求和接收
+    protected ArrayList<Integer> mFilterIndex = new ArrayList<>();
+    @NonNull
+    private final SelfCodeLongClickPopWindowManager longClickPopWindowManager = SelfCodeLongClickPopWindowManager.newInstance(this);
+    private static boolean isNeedRestore = false; // 判断在下次onforeGround的时候是否还原X方向
+    private View mLoginLayout;
+    private Button mLoginBtn;
+    private ColumnDragableListView mListView;
+    private Parcelable mListViewState;
+
+    /**
+     * 用于自选股列表中的股票添加按钮，用户已登录而且自选股个数大于0小于600时显示
+     * 适用于自选股和其他分组，不适用于动态分组和持仓股
+     */
+    private View mAddStockLayout;
+    private int mStockCodeIndex = -1; // 自选股数据中stockCode所在model数组中的索引
+    private int mStockNameIndex = -1; // 自选股数据中stockName所在model数组中的索引
+    private int mMarketIdIndex = -1; // 自选股数据中marketid在model中的索引
+    private boolean isOnBackground = false;
+    private boolean mUserChange = false;
+    protected BanKuaiModel mBanKuaiModel; // 当前选中板块的数据类
+    private SelfCodeHeaderAccount mHeaderAccount; //持仓股分组头部
+    private LinearLayout mCCGSyncLayout; //持仓股同步状态
+    public final List<BaseHead> mShowHeaders = Collections.synchronizedList(new ArrayList<>());
+    protected int[] mIDs;
+    private PopupWindow mZXColorGuidePop;
+    private AutoDismissPopWindow mAddSelfGuidePop; //委托挂单自动添加自选股引导
+    private ShowGuidePopRunnable mShowGuidePopRunnable;
+    private final SelfStockPresenter mPresenter = new SelfStockPresenter(this);
+    protected ARequestHelper mRequestHelper;
+
+    /**
+     *  表示问财表头排序状态下
+     *  触发的方式
+     *  1. 问财表头排序下，再次进入自选页面
+     *  2. 在自选股页面，点击问财表头排序
+     */
+    private boolean isWencaiSort = false;
+
+    /**
+     *  表示当前请求的struct对象
+     */
+    private StuffTableStruct mCurrentStuffTableStruct;
+
+    /**
+     *  走过onBackground后的请求不清空问财表头数据源，防止闪现--的默认数据
+     */
+    private boolean isFromBackGroundRequest = false;
+
+    private final List<List<String>> mWencaiData = new CopyOnWriteArrayList<>();
+
+    private boolean isClickLogin = false;
+    private boolean isContainUsOrUsIndexStock = false; // 返回的数据是否包含与美股相关的股票
+
+    private int lastInstanceId;
+
+    private final int mHeadOtherSpace;
+    // 每一列的宽度
+    protected int[] mColumnWidths;
+    /**
+     * 根据问财表头得出的数据显示类型{@link SelfStockListViewContent#SHOW_TYPE_DETAIL}
+     */
+    protected int[] mDataShowType;
+    protected int[] mUsDataShowType;
+    // 问财表头时间戳
+    protected String[] mTimeStamps;
+    private SelfStockGestureHelper mGestureHelper;
+    // 用来算每一列的宽度
+    private final Paint mPaint;
+    private final int mTimeTextSize;
+    private final int mNameTextSize;
+    // 是否已经发送过左滑到底的埋点
+    private boolean mHadSendScrollToLeftLimitCBAS = false;
+    // 上一次手动水平滑动自选股列表时自选股列表的scrollX
+    private int mLastListViewScrollX = -1;
+
+    // 当接受过一次数据后，就不打印某些日志了，添加这个变量主要是为了确认是否是因为请求自选的数据没有回来导致自选股无法展示
+    public static int sRecLogCount = 0;
+
+    // 美股盘前盘后数据请求类
+    private SelfStockUSPanqianClinet mUsPanqianClinet;
+
+    // 用来请求除复权因子
+    private SelfCfqRequester mCfqRequester;
+
+    /*  当前手指点击的x坐标. */
+    private float mCurrentFingerPointX = EQConstants.INVALID;
+
+    // ~ 构造函数区块
+    // =========================================================================
+    public HangQingSelfcodeTableLandscape(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        MAX_WAIT_HANDLE_SCROLL_X = (int) (180 * EQConstants.DENSITY);
+        // 添加自选分组监听
+        MiddlewareProxy.addSelfStockChangeListener(this);
+        setNeedCustomItemView(true);
+        mPaint = new Paint();
+        // 两边的padding = 5 + 5, 排序图标的宽度 = 6, 排序图标的左边距 = 5, 共21dp
+        mHeadOtherSpace = getResources().getDimensionPixelOffset(R.dimen.dp_21);
+        mTimeTextSize = getResources().getDimensionPixelSize(R.dimen.font_18);
+        mNameTextSize = getResources().getDimensionPixelSize(R.dimen.font_26);
+        mPaint.setTextSize(mNameTextSize);
+
+    }
+
+    public void setmHeaderAccount(SelfCodeHeaderAccount mHeaderAccount) {
+        this.mHeaderAccount = mHeaderAccount;
+        mHeaderAccount.setmDataChangeListener(this);
+    }
+    // ~ 方法区块
+    // =========================================================================
+
+    @Override
+    protected void onFinishInflate() {
+        // 底部tab双击
+        TabWidget tabWidget = getTabWidget();
+        if (tabWidget != null) {
+            tabWidget.setOnDoubleClickListener(this::moveToTop);
+        }
+        super.onFinishInflate();
+        //为长按弹出自选股编辑设置监听
+        setLongClickable(true);
+        setOnItemLongClickListener(new SelfcodeListItemLongClickListener());
+        if (!CommonUtils.isTalkBackOpened(getContext())) {
+            mGestureHelper = new SelfStockGestureHelper(this);
+        }
+        initAddStockView();
+        mRequestHelper = buildRequestHelper();
+    }
+
+    protected ARequestHelper buildRequestHelper() {
+        return new SelfStockRequestHelper(this);
+    }
+
+    private TabWidget getTabWidget() {
+        AbstractUIManager abstractUIManager = MiddlewareProxy.getUiManager();
+        if (abstractUIManager != null) {
+            return abstractUIManager.getTabWidget();
+        }
+        return null;
+    }
+
+    @SuppressWarnings("java:S3776")
+    private void stuffSortId(StringBuffer sb) {
+        StringBuilder sortBuffer = new StringBuilder();
+        boolean isHasStockId = false;
+        boolean isHasNameId = false;
+        boolean isHasMarketId = false;
+        boolean isHasPriceId = false;
+        if (mIDs != null && mIDs.length > 0) {
+            for (int id : mIDs) {
+                if (id != EQConstants.INVALID) {
+                    sortBuffer.append(id).append(EQConstants.REQUEST_SELFSTOCKLIST_SEPARATOR);
+                }
+                if (id == ProtocalDef.HANGQING_STOCK_CODE_4) {
+                    isHasStockId = true;
+                }
+                if (id == ProtocalDef.HANGQING_STOCK_NAME) {
+                    isHasNameId = true;
+                }
+                if (id == ProtocalDef.HANGQING_STOCK_MARKETID) {
+                    isHasMarketId = true;
+                }
+                if (id == ProtocalDef.HANGQING_STOCK_PRICE) {
+                    isHasPriceId = true;
+                }
+            }
+        }
+
+        if (!isHasStockId) {
+            sb.append(ProtocalDef.HANGQING_STOCK_CODE_4).append(EQConstants.REQUEST_SELFSTOCKLIST_SEPARATOR);
+        }
+        if (!isHasNameId) {
+            sb.append(ProtocalDef.HANGQING_STOCK_NAME).append(EQConstants.REQUEST_SELFSTOCKLIST_SEPARATOR);
+        }
+        //columnOrder包含市场id,拼接上旧市场id
+        if (isHasMarketId) {
+            sortBuffer.append(ProtocalDef.HANGQING_STOCK_OLD_MARKETID).append(EQConstants.REQUEST_SELFSTOCKLIST_SEPARATOR);
+        }
+        //columnOrder包含最新价,拼接上最新价日期
+        if (isHasPriceId) {
+            sortBuffer.append(ProtocalDef.HANGQING_STOCK_PRICE_DATE).append(EQConstants.REQUEST_SELFSTOCKLIST_SEPARATOR);
+        }
+        sb.append(sortBuffer);
+    }
+
+    /**
+     * 判断目前状态是否为排序状态
+     */
+    boolean isSorting() {
+        if (ColumnDragableTable.getSortStateData(CTRL_ID) != null) {
+            int currentSortId = Objects.requireNonNull(ColumnDragableTable.getSortStateData(CTRL_ID)).getSortId();
+            return currentSortId != defaultSortId;
+        }
+        return false;
+    }
+
+    protected void initTheme() {
+        if (currentTheme != CommonThemeManager.getCurrentTheme()) {
+            currentTheme = CommonThemeManager.getCurrentTheme();
+            if (header != null) {
+                header.initTheme();
+                header.setBackgroundColor(CommonThemeManager.getColor(getContext(), R.color.search_global_bg));
+            }
+        }
+    }
+
+    /**
+     * 缓存自选股数据
+     */
+    private void saveSelfcodesInCache(AndroidColumnDragableTableModel model) {
+        hqData.clear();
+        HQRowData rowData;
+        isContainUsOrUsIndexStock = false;
+        for (int i = 0; i < model.getRows(); i++) {
+            String code = model.getValueById(i, ProtocalDef.SM_HQ_CODECODE);
+            String marketId = model.getValueById(i, ProtocalDef.HANGQING_STOCK_MARKETID);
+            if (code != null && marketId != null) {
+                rowData = new HQRowData();
+                rowData.values = model.getValues()[i];
+                rowData.colors = model.getColors()[i];
+                rowData.type = model.getStockType(i);
+                rowData.market = marketId;
+                hqData.put(code + UNDERLINE + marketId, rowData);
+                if (HkUsMarketUtil.isUsStockOrIndex(marketId, code)) {
+                    isContainUsOrUsIndexStock = true;
+                }
+            }
+        }
+    }
+
+    @Override
+    public void selfStockChange(boolean isAddSelfStock, String stockCode) {
+        if (getUIHandler() != null) {
+            getUIHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    removeExtRequest();
+                    stuffSelfcodeList();
+                    subscribeRequest();
+                    changeAddStockBtnStatus();
+                }
+            });
+        }
+    }
+
+    @Override
+    public void syncSelfStockSuccess() {
+        if (sRecLogCount < 1) {
+            Log.i(Log.SS_DATA, "PUSH- notify sync succ->" + System.currentTimeMillis());
+        }
+        if (getUIHandler() != null) {
+            getUIHandler().post(new Runnable() {
+                @Override
+                public void run() {
+                    removeExtRequest();
+                    stuffSelfcodeList();
+                    subscribeRequest();
+                }
+            });
+        }
+    }
+
+    @Override
+    public String getExtrRequestStr(boolean isDefault) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("columnorder=");
+        stuffSortId(sb);
+        sb.append("\r\n");
+        if (!isSorting()) {    //排序状态下不发送订阅请求的关键字
+            sb.append("newrealtime=1");
+        }
+        handleStockGroupRequest(sb);
+        return sb.toString();
+    }
+
+
+    /**
+     * 拼接
+     */
+    private void handleStockGroupRequest(StringBuffer sb) {
+        if (isWencaiSort && mBanKuaiModel != null) {
+            WencaiDataModel dataModel = sWencaiHeadDataManager.getWencaiData();
+            List<EQBasicStockInfo> stockInfos = buildWencaiStockInfo(dataModel);
+            buildStockGroupStr(sb, stockInfos);
+        } else {
+            if (mBanKuaiModel != null && !mBanKuaiModel.isZiXuan()) {
+                buildStockGroupStr(sb, mBanKuaiModel.getStockList());
+            } else {
+                buildCategoryGroupRequest(sb);
+            }
+        }
+    }
+
+    /**
+     * 如果开启了市场筛选，则选择当前选中的市场下的股票列表
+     * @param sb stringBuffer
+     */
+    private void buildCategoryGroupRequest(@NonNull StringBuffer sb) {
+        CategoryConfig config = CategoryDataProcessor.getInstance().getSelectCategoryConfig();
+        if (config == null || config.isAllConfig()) {
+            sb.append(StockGroupConstant.NEWLINE);
+            sb.append("update=1");
+            return;
+        }
+        buildStockGroupStr(sb, config.getSupportStockList());
+    }
+
+    private List<EQBasicStockInfo> buildWencaiStockInfo(@NonNull WencaiDataModel dataModel) {
+        List<EQBasicStockInfo> stockInfos = new ArrayList<>();
+        for (int pos=0; pos<dataModel.getStockCodeList().size(); pos++) {
+            EQBasicStockInfo stockInfo = new EQBasicStockInfo();
+            stockInfo.mMarket = dataModel.getStockMarketList().get(pos);
+            stockInfo.mStockCode = dataModel.getStockCodeList().get(pos);
+            stockInfos.add(stockInfo);
+        }
+        return stockInfos;
+    }
+
+    private void buildStockGroupStr(StringBuffer sb, List<EQBasicStockInfo> stocks) {
+        sb.append(StockGroupConstant.NEWLINE);
+        buildReqStr(sb, stocks);
+    }
+
+    private void buildReqStr(StringBuffer sb, List<EQBasicStockInfo> stocks) {
+        StringBuilder stockCodeValue = new StringBuilder();
+        StringBuilder marketValue = new StringBuilder();
+        for (EQBasicStockInfo eqBasicStockInfo: stocks) {
+            if (eqBasicStockInfo != null &&
+                !TextUtils.isEmpty(eqBasicStockInfo.mStockCode) &&
+                !TextUtils.isEmpty(eqBasicStockInfo.mMarket)) {
+                String stockCode = eqBasicStockInfo.mStockCode;
+                String market = eqBasicStockInfo.mMarket;
+                stockCodeValue.append(stockCode).append(EQConstants.REQUEST_SELFSTOCKLIST_SEPARATOR);
+                marketValue.append(market).append(EQConstants.REQUEST_SELFSTOCKLIST_SEPARATOR);
+            }
+        }
+        sb.append("selfstockcustom=1").append(StockGroupConstant.NEWLINE);
+        sb.append("stocklist=").append(stockCodeValue).append(StockGroupConstant.NEWLINE);
+        sb.append("marketlist=").append(marketValue).append(StockGroupConstant.NEWLINE);
+        sb.append("update=1");
+    }
+
+
+    // 获取pageObj
+    public String getPageObj(BanKuaiModel banKuaiModel) {
+        if (banKuaiModel != null) {
+            StringBuilder builder = new StringBuilder();
+            if (banKuaiModel.isCCG()) {
+                if (mHeaderAccount != null) {
+                    if (mHeaderAccount.getLastAccount() == null) {
+                        builder.append(String.format(CBASConstants.CBAS_ZIXUAN_FZ, CBASConstants.CBAS_CC));
+                    } else {
+                        builder.append(String.format(CBASConstants.CBAS_ZIXUAN_FZ,
+                                mHeaderAccount.isAllAccount() ? CBASConstants.CBAS_CC_CCHZ : CBASConstants.CBAS_CC_CCQS));
+                    }
+                } else {
+                    builder.append(String.format(CBASConstants.CBAS_ZIXUAN_FZ, CBASConstants.CBAS_CC));
+                }
+            } else if (banKuaiModel.isDynamic()) {
+                if (HexinUtils.isLandscape()) {
+                    builder.append(String.format(CBASConstants.CBAS_ZIXUAN_PREFIX, HorizontalStockGroupUtil.CUR_BK_TYPE_TJXG));
+                } else {
+                    builder.append(CBASConstants.CBAS_DG_ZIXUAN_FZQS);
+                }
+            } else {
+                builder.append(String.format(CBASConstants.CBAS_ZIXUAN_FZ, banKuaiModel.isZiXuan()
+                        ? CBASConstants.CBAS_ZX : String.valueOf(banKuaiModel.getSn())));
+            }
+            return builder.toString();
+        }
+        return null;
+    }
+
+    private void initSortData() {
+        SortItemDataState sortItemDataState = ColumnDragableTable.getSortStateData(CTRL_ID);
+        if (sortItemDataState == null) {
+            int sortOrder = 0;
+            String requestInfo = "sortid=-1\nsortorder=0";
+            sortItemDataState = new SortItemDataState(sortOrder, defaultSortId, null, requestInfo);
+            ColumnDragableTable.addFrameSortData(CTRL_ID, sortItemDataState);
+        }
+    }
+
+    /**
+     * 初始化页面pageid,frameid
+     */
+    private void initPageId() {
+        AbstractUIManager uiManager = MiddlewareProxy.getUiManager();
+        if (uiManager != null && uiManager.getCurFocusPage() != null) {
+            int frameid = uiManager.getCurFocusPage().getId();
+            switch (frameid) {
+                case ProtocalDef.FRAMEID_ZXG: // 竖屏
+                    mPageType = PAGE_TYPE_GG;
+                    break;
+                case ProtocalDef.FRAMEID_ZXG_LANDSCAPE: // 横屏
+                    mPageType = PAGE_TYPE_HP;
+                    break;
+            }
+            this.mFrameId = frameid;
+        }
+    }
+
+    @Override
+    public BaseDataCollect getBaseDataCollect() {
+        setNeedHeaderrestoreButton(true);
+        setNeedHeaderreEditButton(true);
+        initPageId();
+        initSortData();
+
+        int size = mShowHeaders.size();
+        int[] id4Collect = new int[size];
+        String[] name4Collect = new String[size];
+
+        for (int i = 0; i < size; i++) {
+            BaseHead baseHead = mShowHeaders.get(i);
+            if (baseHead != null && !TextUtils.isEmpty(baseHead.getMobileShowName())) {
+                id4Collect[i] = baseHead.getId();
+                name4Collect[i] = baseHead.getMobileShowName();
+            }
+        }
+
+        return new BaseDataCollect(CTRL_ID, mPageId, mFrameId, mPageType, id4Collect, name4Collect,
+                DEFAULT_REQUEST_MESSAGE);
+    }
+
+    /**
+     * 初始化股票添加按钮
+     */
+    private void initAddStockView() {
+        mAddStockLayout = inflate(getContext(), R.layout.add_stock, null);
+        mAddStockLayout.setOnClickListener(v -> {
+            int frameId = ProtocalDef.FRAMEID_ADD_SELFSTOCK;
+            if (mBanKuaiModel != null && mBanKuaiModel.isZiXuan()) {
+                frameId = MultipleSearchUtil.getStockSearchFrameId();
+            }
+            EQAction action = new EQGotoFrameAction(EQEvent.EVENT_TYPE_CLICK, frameId);
+            HexinCBASUtil.sendStandardJumpPageCbas(CBASConstants.CBAS_ZIXUAN_ADD_STOCK, frameId, true);
+            MiddlewareProxy.executorAction(action);
+        });
+        mAddStockLayout.setVisibility(View.GONE);
+    }
+
+
+    @Override
+    public View getFooterView() {
+        mListView = getListView();
+        mLoginLayout = inflate(getContext(), R.layout.selfcode_login_view, null);
+        mLoginBtn = mLoginLayout.findViewById(R.id.login_button);
+        mLoginBtn.setBackgroundResource(CommonThemeManager.getDrawableRes(getContext(), R.drawable.selfcode_login_shape));
+        mLoginBtn.setTextColor(CommonThemeManager.getColor(getContext(), R.color.selfcode_login_tip_color));
+        mLoginLayout.findViewById(R.id.login_layout_divide).setBackgroundColor(CommonThemeManager.getColor(getContext(),
+                R.color.hangqing_tableitem_divider));
+        //同步自选股按钮事件
+        mLoginBtn.setOnClickListener(v -> {
+            isClickLogin = true;
+            // 埋点
+            String pageObj = getPageObj(mBanKuaiModel);
+            if (!TextUtils.isEmpty(pageObj)) {
+                String builder = pageObj + CBASConstants.CBAS_SPLIT_DIAN + CBASConstants.CBAS_ZIXUANGU_TONGBUZIXUANGU;
+                HexinCBASUtil.sendStandardFunctionCbasByClick(builder, false);
+            }
+
+            MiddlewareProxy.saveBehaviorStr(mFrameId + LOGIN_CBAS);
+            MiddlewareProxy.gotoLoginActivityWithCurrentOrientation();
+        });
+        mListView.setFooterDividersEnabled(false);
+        return mLoginLayout;
+    }
+
+    private void initMyTheme() {
+        mLoginBtn.setBackgroundResource(CommonThemeManager.getDrawableRes(getContext(), R.drawable.selfcode_login_shape));
+        mLoginBtn.setTextColor(CommonThemeManager.getColor(getContext(), R.color.selfcode_login_tip_color));
+        mLoginLayout.findViewById(R.id.login_layout_divide).setBackgroundColor(CommonThemeManager.getColor(getContext(),
+                R.color.hangqing_tableitem_divider));
+    }
+
+    @Override
+    public void onForeground() {
+        super.initColumnWidth();
+        isShowOverlay = !ColorBlindnessManager.isColorBlindnessOpen();
+        sWencaiHeadDataManager.addWencaiCallBack(this);
+        RepositoryInstanceHolder.INSTANCE.setTableHeadDataListener(this);
+        ChannelAuth.INSTANCE.addUserChangeListener(this);
+        AddSelfHeadManager.INSTANCE.setUpdateListener(this);
+        CategoryDataProcessor.getInstance().addCategoryChangedListener(this);
+        MiddlewareProxy.addSelfStockChangeListener(this);
+        if (listview != null) {
+            listview.setOnHScrollListener(this);
+        }
+
+        initView();
+        initValue();
+
+        changeAddStockBtnStatus();
+        //初始化股票名称和股票代码的索引
+        initIndex();
+        isOnBackground = false;
+        if (header != null) {
+            header.setWencaiResetSortListener(this);
+        }
+        super.onForeground();
+        stuffSelfcodeList();
+        if (!isSorting() && MiddlewareProxy.getMobileDataCache() != null && isFirst) {
+            StuffTableStruct fileStruct = MiddlewareProxy.getMobileDataCache().getSelfStockCacheNew();
+            if (fileStruct != null) {
+                receive(fileStruct);
+            } else {
+                isFirst = false;
+            }
+        }
+        if (isClickLogin) {
+            isFromBackGroundRequest = true;
+        }
+        initHeadView();
+        if (header != null) {
+            header.handleSlidingMenuEditTips();
+        }
+        if (listview != null) {
+            listview.forbiddenSnap();
+        }
+        mPresenter.onForground();
+        if (mGestureHelper != null) {
+            mGestureHelper.onForeground();
+        }
+        mHadSendScrollToLeftLimitCBAS = false;
+        sWencaiHeadDataManager.removeResendRequest();
+    }
+
+
+
+    @Override
+    protected int getColumnFixWidth(){
+        return (int)this.getContext().getResources().getDimension(R.dimen.dp_100);
+    }
+
+
+    @Override
+    public void onScrollStateChanged(AbsListView view, int scrollState) {
+        super.onScrollStateChanged(view, scrollState);
+        switch (scrollState) {
+            case AbsListView.OnScrollListener.SCROLL_STATE_IDLE:
+                //滚动停止
+                if ((!isMarkColorSwitchNotOpen() && !isZxMarkGuideShowed())
+                        || (WeiTuoSettingUtil.isAutoAddSelfStockSwitchOpen() && !isAddZxAutoGuideShowed())) {
+                    getSimpleListAdapter().notifyDataSetChanged();
+                }
+                //上下滚动
+                sWencaiHeadDataManager.removeResendRequest();
+                break;
+            case AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL:
+            case AbsListView.OnScrollListener.SCROLL_STATE_FLING:
+                dismissAllGuidePop();
+                break;
+        }
+    }
+
+    private boolean isAddZxAutoGuideShowed() {
+        return WeituoConstant.WEITUO_STRING_EMPTY.equals(
+                SPUtils.getStringSPValue(SPConfig.SP_ADD_SELFSOTCK_AUTO_LIST_GUIDE, SPConfig.SP_ADD_SELFSOTCK_AUTO_LIST_GUIDE));
+    }
+
+    private boolean isZxMarkGuideShowed() {
+        return SPUtils.getBooleanSPValue(SPConfig.SP_NAME_ZIXUAN_COLOR_MARK_GUIDE_KEY,
+                SPConfig.SP_NAME_ZIXUAN_COLOR_MARK_GUIDE_KEY, false);
+    }
+
+    private boolean haveGuidePopShow() {
+        return (mAddSelfGuidePop != null && mAddSelfGuidePop.isShowing()) ||
+                (mZXColorGuidePop != null && mZXColorGuidePop.isShowing());
+    }
+
+    private void showAddSelfStockGuidePop(int position, int screenIndex) {
+        if (!WeiTuoSettingUtil.isAutoAddSelfStockSwitchOpen() || isAddZxAutoGuideShowed()) {
+            return;
+        }
+        if (haveGuidePopShow()) {
+            return;
+        }
+
+        BubbleLayout rootView = (BubbleLayout) LayoutInflater.from(getContext()).inflate(R.layout.add_self_stock_guide, null);
+        View popView = initGuidePopView(rootView, getContext().getString(R.string.add_self_stock_guide_tips), position);
+        mAddSelfGuidePop = new AutoDismissPopWindow(popView,
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 5000);
+        if(showGuidePopWindow(position, screenIndex, mAddSelfGuidePop,
+                popView, getContext().getResources().getDimensionPixelSize(R.dimen.dp_40))) {
+            SPUtils.saveStringSPValue(SPConfig.SP_ADD_SELFSOTCK_AUTO_LIST_GUIDE, SPConfig.SP_ADD_SELFSOTCK_AUTO_LIST_GUIDE,
+                    WeituoConstant.WEITUO_STRING_EMPTY);
+        }
+    }
+
+    private void showStockColorGuidePop(int position, int screenIndex) {
+        if (isZxMarkGuideShowed() || isMarkColorSwitchNotOpen() ) {
+            return;
+        }
+        if (haveGuidePopShow()) {
+            return;
+        }
+
+        BubbleLayout rootView = (BubbleLayout) LayoutInflater.from(getContext()).inflate(R.layout.zixuan_color_mark_guide, null);
+        rootView.findViewById(R.id.close_img).
+                setBackgroundResource(CommonThemeManager.getDrawableRes(getContext(), R.drawable.icon_close_popview));
+        View popView = initGuidePopView(rootView, getContext().getString(R.string.zixuan_color_mark_guide_tips), position);
+        mZXColorGuidePop = new PopupWindow(popView, LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT, true);
+        if (showGuidePopWindow(position, screenIndex, mZXColorGuidePop, popView,
+                getContext().getResources().getDimensionPixelSize(R.dimen.dragablelist_fix_cell_padding_left))) {
+            //该引导气泡只展示一次
+            SPUtils.saveBooleanSPValue(SPConfig.SP_NAME_ZIXUAN_COLOR_MARK_GUIDE_KEY,
+                    SPConfig.SP_NAME_ZIXUAN_COLOR_MARK_GUIDE_KEY, true);
+        }
+        View close = popView.findViewById(R.id.close);
+        close.setOnClickListener(v -> {
+            if (mZXColorGuidePop != null && mZXColorGuidePop.isShowing()) {
+                mZXColorGuidePop.dismiss();
+            }
+        });
+    }
+
+    private boolean showGuidePopWindow(int position, int screenIndex, PopupWindow popupWindow, View popView, int leftPadding) {
+        if (mListView == null || isOnBackground) {
+            return false;
+        }
+        // 自选股分组才有引导
+        if (!isStockGroupModeInZXG()) {
+            return false;
+        }
+        if (mListView.getChildCount() <= screenIndex) {
+            return false;
+        }
+        View listItemView = mListView.getChildAt(screenIndex);
+        popupWindow.setAnimationStyle(R.style.guideAnim);
+        popupWindow.setFocusable(false);
+        popupWindow.setOutsideTouchable(false);
+        popupWindow.setBackgroundDrawable(new BitmapDrawable());
+        if (listItemView == null) {
+            return false;
+        }
+        int[] location = new int[2];
+        listItemView.getLocationOnScreen(location);
+
+        int[] anchorViewSize = CommonUtils.getViewMeasuredSize(listItemView);
+        int[] popViewSize = CommonUtils.getViewMeasuredSize(popView);
+
+        try {
+            if (position != mLastPos) {
+                popupWindow.showAtLocation(listItemView, Gravity.NO_GRAVITY, leftPadding,
+                        location[1] + anchorViewSize[1] - getContext().getResources().getDimensionPixelSize(R.dimen.dp_4));
+            } else {
+                popupWindow.showAtLocation(listItemView, Gravity.NO_GRAVITY, leftPadding,
+                        location[1] - popViewSize[1] + getContext().getResources().getDimensionPixelSize(R.dimen.dp_4));
+            }
+            return true;
+        } catch (Exception e) { //catch bad token exception.
+            Log.printStackTrace(e);
+        }
+        return false;
+    }
+
+    private View initGuidePopView(BubbleLayout rootView, String contentText, int position) {
+        TextView content = rootView.findViewById(R.id.bubble_guide_content);
+        content.setText(contentText);
+        content.setTextColor(CommonThemeManager.getColor(getContext(), R.color.white_99FFFFFF));
+        rootView.setBubbleColor(CommonThemeManager.getColor(getContext(), R.color.blue_4691EE));
+        if (position != mLastPos) {
+            rootView.setArrowDirection(ArrowDirection.TOP);
+        } else {
+            rootView.setArrowDirection(ArrowDirection.BOTTOM);
+        }
+        rootView.setArrowWidth(getContext().getResources().getDimensionPixelSize(R.dimen.dp_12));
+        rootView.setArrowHeight(getContext().getResources().getDimensionPixelSize(R.dimen.dp_6));
+        rootView.setArrowPosition(getContext().getResources().getDimensionPixelSize(R.dimen.dp_4));
+        rootView.requestLayout();
+        return rootView;
+    }
+
+    public void dismissAllGuidePop() {
+        if (mZXColorGuidePop != null && mZXColorGuidePop.isShowing()) {
+            mZXColorGuidePop.dismiss();
+        }
+        if (mAddSelfGuidePop != null && mAddSelfGuidePop.isShowing()) {
+            mAddSelfGuidePop.dismiss();
+        }
+    }
+
+
+    private void initHeadView() {
+        if (header != null) {
+            //如果切换用户且还在排序，则取消排序，恢复默认状态
+            if (mUserChange && isSorting()) {
+                header.resetSelfCodeList();
+                //切换用户后设置为不排序
+                MultiStockProcessor.getInstance().resetHeadSortInfo();
+            }
+            header.setTopDividerVisiable(View.GONE);
+
+            int sortId = header.getSortId();
+            for (BaseHead baseHead : mShowHeaders) {
+                if (baseHead.getId() == sortId) {
+                    setWencaiSort(baseHead instanceof WencaiHead);
+                }
+            }
+        }
+    }
+
+    /**
+     * 根据股票个数来判断股票添加按钮是否显示
+     * @param showAddBtn 根据股票和分组类型判断是否需要显示“添加自选”按钮
+     */
+    private void setAddStockViewVisibilityByStockInfo(boolean showAddBtn) {
+        if (mAddStockLayout.getVisibility() == View.GONE && showAddBtn) {
+            mAddStockLayout.setVisibility(View.VISIBLE);
+            mListView.addFooterView(mAddStockLayout);
+        }
+        if (mAddStockLayout.getVisibility() == View.VISIBLE && !showAddBtn) {
+            mAddStockLayout.setVisibility(View.GONE);
+            mListView.removeFooterView(mAddStockLayout);
+        }
+        if (isDynamic()) {
+            mAddStockLayout.setVisibility(View.GONE);
+            mListView.removeFooterView(mAddStockLayout);
+        }
+        if (isCCGModel()) {
+            mAddStockLayout.setVisibility(View.GONE);
+            mListView.removeFooterView(mAddStockLayout);
+        }
+    }
+
+    public void changeAddStockBtnStatus() {
+        BanKuaiModel model = StockGroupManager.getInstance().getCurrentBanKuaiMode();
+        if (!MiddlewareProxy.isUserInfoTemp() && model != null) {
+            int count = model.getStockList().size();
+            boolean inLimit = model.isZiXuan() ? count < EQConstants.SELFCODE_LIMIT : model.checkLimitNum();
+            setAddStockViewVisibilityByStockInfo(count > 0 && inLimit);
+        } else {
+            if (mAddStockLayout.getVisibility() == View.VISIBLE) {
+                mAddStockLayout.setVisibility(View.GONE);
+                mListView.removeFooterView(mAddStockLayout);
+            }
+        }
+    }
+
+    public void initView() {
+        if (mListViewState != null && !mUserChange) {
+            mListView.onRestoreInstanceState(mListViewState);
+        }
+        refreshFooterView();
+    }
+
+    public void refreshFooterView() {
+        if (!MiddlewareProxy.isUserInfoTemp()) {
+            mLoginLayout.setVisibility(View.GONE);
+            mListView.removeFooterView(mLoginLayout);
+            mListView.setFooterDividersEnabled(true);
+        } else {
+            if (mLoginLayout.getVisibility() == View.GONE) {
+                mLoginLayout.setVisibility(View.VISIBLE);
+                mListView.addFooterView(mLoginLayout);
+                mListView.setFooterDividersEnabled(false);
+            }
+
+            CategoryConfig config = CategoryDataProcessor.getInstance().getSelectCategoryConfig();
+            boolean supportHotStock = config != null && config.supportHotStock();
+            //对于动态分组 或 开启自选股筛选后，支持热门股票的分组, 隐藏下方"同步自选股"布局
+            if (isDynamic() || supportHotStock) {
+                mLoginLayout.setVisibility(View.GONE);
+                mListView.removeFooterView(mLoginLayout);
+                mListView.setFooterDividersEnabled(true);
+            }
+            initMyTheme();
+        }
+    }
+
+    protected void initValue() {
+        // 编辑页面更改过表头，则回到最初的位置
+        boolean isInitSupportHead = RepositoryInstanceHolder.INSTANCE.isInitSupportHead();
+        // 股票列表某些情况下重置到原位
+        doXResotre(isInitSupportHead);
+        mFilterIds = new ArrayList<>();
+        mFilterIds.add(ProtocalDef.HANGQING_STOCK_CODE_4);
+        mFilterIds.add(ProtocalDef.HANGQING_STOCK_CODE_5);
+        mFilterIds.add(ProtocalDef.HANGQING_STOCK_RZRQ);
+        mFilterIds.add(ProtocalDef.HANGQING_STOCK_MARKETID);
+        mFilterIds.add(ProtocalDef.HANGQING_STOCK_PRICE_DATE);
+        mShowHeaders.clear();
+        if (isInitSupportHead) {
+            Log.d(TAG, "initValue, getMobileSupportHead");
+            List<BaseHead> baseHeads = RepositoryInstanceHolder.INSTANCE.getMobileSupportHead();
+            if (baseHeads.size() == 0) {
+                baseHeads.addAll(RepositoryInstanceHolder.INSTANCE.getUserDefaultHead());
+            }
+            mShowHeaders.addAll(baseHeads);
+        } else {
+            mShowHeaders.addAll(RepositoryInstanceHolder.INSTANCE.getUserDefaultHead());
+        }
+        addDefaultHead(mShowHeaders);
+        int count = mShowHeaders.size();
+        int showCount = count - mFilterIds.size();
+        mColumnWidths = new int[showCount];
+        mDataShowType = new int[showCount];
+        mUsDataShowType = new int[showCount];
+        mTimeStamps = new String[showCount];
+        mFilterIndex.clear();
+        BaseHead baseHead;
+        String timeStamp;
+        int filterCount = 0, index, id;
+        for (int i = 0; i < count; i++) {
+            baseHead = mShowHeaders.get(i);
+            id = baseHead.getId();
+            if (mFilterIds.contains(id)) {
+                mFilterIndex.add(i);
+                filterCount++;
+            } else if (id == STOCK_NAME_DATA_ID) {
+                filterCount++;
+            } else {
+                timeStamp = null;
+                index = i - filterCount;
+                if (index >= showCount) {
+                    sendErrorInfo(i, filterCount);
+                    break;
+                }
+                createSpecialType(id, index);
+                if (baseHead instanceof WencaiHead) {
+                    timeStamp = ((WencaiHead) baseHead).getTimeStamp();
+                    mTimeStamps[index] = timeStamp;
+                    mDataShowType[index] = getDataShowType(((WencaiHead) baseHead).getOption());
+                    mUsDataShowType[index] = getDataShowType(((WencaiHead) baseHead).getOption());
+                }
+                mColumnWidths[index] = getHeaderWidth(baseHead.getMobileShowName(), timeStamp);
+            }
+        }
+        // 如果当前表格控件的ListView为有吸附效果的则初始化表格宽度数据
+        if (listview instanceof DraggableAttractListView) {
+            ((DraggableAttractListView) listview).initColumnData(mColumnWidths);
+        }
+        Collections.sort(mFilterIndex);
+        mRequestHelper.setColumnWidths(mColumnWidths);
+        mRequestHelper.updateRequestHeaderIfNeed();
+        mIDs = mRequestHelper.buildRequestIds();
+
+        setDisableSortIds(DISABLE_SORT_ID);
+    }
+
+    protected void createSpecialType(int id, int index) {
+        switch (id) {
+            case ProtocalDef.HANGQING_STOCK_PRICE:
+                mUsDataShowType[index] = SelfStockListViewContent.SHOW_TYPE_USA_PANQIAN;
+                mDataShowType[index] = SelfStockListViewContent.SHOW_TYPE_PRICE;
+                break;
+            case ProtocalDef.HANGQING_AG_ZHANGFU:
+                mUsDataShowType[index] = SelfStockListViewContent.SHOW_TYPE_USA_ZHANGFU;
+                break;
+            case ProtocalDef.HANGQING_AG_ZHANGDIE:
+                mUsDataShowType[index] = SelfStockListViewContent.SHOW_TYPE_USA_ZHANGDIE;
+                break;
+        }
+    }
+    protected void sendErrorInfo(int index, int filterCount) {
+        StringBuilder errorInfo = new StringBuilder("{header:" + mShowHeaders.size() + ",filterCount:" + filterCount +
+                "showCount:" + mColumnWidths.length + ",index:" + index + ",header:[");
+        for (BaseHead baseHead : mShowHeaders) {
+            errorInfo.append(baseHead.getMobileShowName()).append(',');
+        }
+        errorInfo.append("]}");
+        PerformanceProxy.saveCustomException("SelfStockHeader", errorInfo.toString());
+    }
+
+    protected int getDataShowType(int option) {
+        switch (option & HEAD_SHOW_TYPE_FLAG) {
+            case SHOW_TYPE_DETAIL:
+                return SelfStockListViewContent.SHOW_TYPE_DETAIL;
+            case SHOW_TYPE_LINK:
+                return SelfStockListViewContent.SHOW_TYPE_LINK;
+        }
+        return SelfStockListViewContent.SHOW_TYPE_NORMAL;
+    }
+
+    protected int getHeaderWidth(String headName, String timeStamp) {
+        int measureWidth = (int) mPaint.measureText(headName);
+        if (!TextUtils.isEmpty(timeStamp)) {
+            mPaint.setTextSize(mTimeTextSize);
+            int timeWidth = (int) mPaint.measureText(timeStamp);
+            measureWidth = Math.max(measureWidth, timeWidth);
+            mPaint.setTextSize(mNameTextSize);
+        }
+        measureWidth += mHeadOtherSpace;
+        return Math.min(2 * mColumnWidth, Math.max(measureWidth, mColumnWidth));
+    }
+
+    @Override
+    protected void setValuesForHeader() {
+        ((SelfStockListViewHeader) header).setValues(
+                model.tableHeads, model.getFilterIndex(), mColumnWidths, mTimeStamps, mUsDataShowType);
+    }
+
+    protected void doXResotre(boolean isInitSupportHead) {
+
+        // 由于手机支持的表头放在主站连接成功以后，所以可能出现表头未初始化的情况。这时使用客户端配置的默认表头项
+        if (isInitSupportHead) {
+            if (isHeadsChange(RepositoryInstanceHolder.INSTANCE.getMobileSupportHead())) {
+                isNeedRestore = true;
+            }
+        }
+        if (mUserChange) {
+            isNeedRestore = true;
+            Objects.requireNonNull(header.getScrollableView()).removeAllViews();
+        }
+        if (isNeedRestore) {
+            setListViewXRestore();
+            isNeedRestore = false;
+        }
+    }
+
+
+    /**
+     * 注意这里，如果后期需要增加更多的默认表头，请同时修改{@link #DEFAULT_HEAD_SIZE}
+     * 注意{@link com.hexin.android.component.hangqing.selfstock.SelfStockTable}已重写该方法
+     * 请注意修改{@link #pcHeadCallBack()}的判断逻辑
+     * */
+    protected void addDefaultHead(List<BaseHead> mHeadRequest) {
+        SocketHead marektIdHead = new SocketHead();
+        marektIdHead.setMobileId(ProtocalDef.HANGQING_STOCK_MARKETID);
+        marektIdHead.setmName(MARKET_HEAD_NAME);
+        SocketHead priceDateHead = new SocketHead();
+        priceDateHead.setMobileId(ProtocalDef.HANGQING_STOCK_PRICE_DATE);
+        priceDateHead.setmName(MARKET_HEAD_NAME);
+        SocketHead rzrqhead = new SocketHead();
+        rzrqhead.setMobileId(ProtocalDef.HANGQING_STOCK_RZRQ);
+        rzrqhead.setmName(RZRQ_HEAD_NAME);
+        mHeadRequest.add(marektIdHead);
+        mHeadRequest.add(priceDateHead);
+        mHeadRequest.add(rzrqhead);
+    }
+
+    /**
+     * 初始化股票名称和股票代码的索引
+     */
+    private void initIndex() {
+        if (mIDs != null) {
+            for (int i = 0; i < mIDs.length; i++) {
+                if (mIDs[i] == STOCK_NAME_DATA_ID) {
+                    mStockNameIndex = i;
+                } else if (mIDs[i] == STOCK_CODE_DATA_ID) {
+                    mStockCodeIndex = i;
+                } else if (mIDs[i] == ProtocalDef.HANGQING_STOCK_MARKETID) {
+                    mMarketIdIndex = i;
+                }
+            }
+        }
+    }
+
+    @Override
+    public void resetWencaiSort() {
+        setWencaiSort(false);
+    }
+
+    @Override
+    public void defaultRequest() {
+        // 点击取消排序，进入普通标图请求状态
+        setWencaiSort(false);
+        RequestEmitter.getHqManager().removeBuff(mFrameId, mPageId, lastInstanceId);
+        QueueManagement.remove(lastInstanceId);
+        subscribeRequest();
+        MultiStockProcessor.getInstance().resetHeadSortInfo();
+    }
+
+    @Override
+    public void dataSetChanged(int sortId, int sortOrder) {
+        RequestEmitter.getHqManager().removeBuff(mFrameId, ProtocalDef.PAGEID_ZXG_LANDSCAPE, getInstanceId());
+        MiddlewareProxy.unSubscribe(getInstanceId());
+        if (isSocketHead(sortId)) {
+            setWencaiSort(false);
+            super.dataSetChanged(sortId, sortOrder);
+            MultiStockProcessor.getInstance().setNormalHeadSortInfo(sortId, sortOrder);
+        } else {
+            setWencaiSort(true);
+            moveToTop();
+            sendWencaiHttpRequest(sortId, sortOrder, true);
+        }
+    }
+
+    /**
+     *  将股票列表移到顶部
+     */
+    private void moveToTop() {
+        mIsToTop = true;
+        int firstVisiblePosition = mListView.getFirstVisiblePosition();
+        if (firstVisiblePosition == 0) {
+            mListView.smoothScrollToPositionFromTop(0, 0);
+            mIsToTop = false;
+        } else if (firstVisiblePosition < SCROLL_TO_POSITION) {
+            mListView.smoothScrollToPositionFromTop(0, 0);
+        } else {
+            mListView.setAdapter(getSimpleListAdapter());
+            post(() -> {
+                mWhenStopPosition = 0;
+                refreshTableItems();
+            });
+        }
+    }
+
+    protected boolean isSocketHead(int sortId) {
+        for (BaseHead baseHead : mShowHeaders) {
+            if (baseHead.getId() == sortId) {
+                return baseHead instanceof SocketHead;
+            }
+        }
+        return  true;
+    }
+
+    @Override
+    public void onRemove() {
+        longClickPopWindowManager.onRemove();
+        if (mFrameId != ProtocalDef.FRAMEID_ZXG_LANDSCAPE) {
+            TabWidget tabWidget = getTabWidget();
+            if (tabWidget != null) {
+                tabWidget.setOnDoubleClickListener(null);
+            }
+        }
+        super.onRemove();
+        //移除自选股监听
+        MiddlewareProxy.removeSelfStockChangeListener(this);
+        // 自选股缓存数据保存文件中
+        saveSelfCodeToLocal();
+        // 竖屏退出释放自选股缓存
+        if (!HexinUtils.isLandscape()) {
+            hqData.clear();
+        }
+        ChannelAuth.INSTANCE.removeUserChangeListener(this);
+        if (mHeaderAccount != null) {
+            mHeaderAccount.setmDataChangeListener(null);
+        }
+        if (mGestureHelper != null) {
+            mGestureHelper.onRemove();
+        }
+    }
+
+
+    protected void doBeforeParseStruct(StuffBaseStruct struct) {
+        doBeforeParseStruct(struct, false);
+    }
+
+    protected void doBeforeParseStruct(StuffBaseStruct struct, boolean noClearWencai) {
+        if (struct instanceof StuffTableStruct) {
+            StuffTableStruct stuffTableStruct = (StuffTableStruct) struct;
+            // 表示问财表头数据项清除的时机
+            // 不清除的几种情况
+            // 1. 自选股实时数据推送项
+            // 2. 从后台首次切入到自选股页面
+            if (!noClearWencai && !struct.isRealData() && !isWencaiSort && !isFromBackGroundRequest) {
+                mWencaiData.clear();
+            }
+            fillDefaultSocketData(stuffTableStruct);
+            initWencaiDataToStruct(stuffTableStruct);
+        }
+    }
+
+    public void fillModelExtData(StuffTableStruct struct, AndroidColumnDragableTableModel model) {
+        // 在这里挂载最新价的数据，不然后面可能会被“停牌”给覆盖
+        if (model != null) {
+            if (mRequestHelper.getHasZxsy()) {
+                String[] prePriceArray = struct.getData(HQDataConstant.HQ_ZUOSHOU);
+                model.extData.put(HQDataConstant.HQ_ZUOSHOU, prePriceArray);
+            }
+            if (mRequestHelper.hasZxjOrZxsy()) {
+                String[] priceArray = struct.getData(HQDataConstant.HQ_PRICE);
+                model.extData.put(HQDataConstant.HQ_PRICE, priceArray);
+            }
+        }
+    }
+
+    /**
+     *  填充表头发送主站没有的数据
+     */
+    private void fillDefaultSocketData(StuffTableStruct stuffTableStruct) {
+        int row = stuffTableStruct.getRow();
+        synchronized (mShowHeaders) {
+            for (BaseHead baseHead : mShowHeaders) {
+                if (baseHead instanceof SocketHead) {
+                    String[] value = stuffTableStruct.getData(baseHead.getId());
+                    if (value == null) {
+                        value = new String[row];
+                        Arrays.fill(value, DASH);
+                        stuffTableStruct.putDataTable(baseHead.getId(), value);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     *  填充表头问财没有的数据
+     */
+    private void fillDefaultWencaiData(StuffTableStruct struct, List<BaseHead> baseHeads) {
+        int row = struct.getRow();
+        synchronized (baseHeads) {
+            for (BaseHead baseHead : baseHeads) {
+                String[] value = struct.getData(baseHead.getId());
+                if (value == null) {
+                    String[] defaultValue = new String[row];
+                    Arrays.fill(defaultValue, DASH);
+                    struct.putDataTable(baseHead.getId(), defaultValue);
+                }
+            }
+
+        }
+    }
+
+    @Override
+    public void doAfterReceiveData(StuffBaseStruct struct) {
+        super.doAfterReceiveData(struct);
+        if (model != null) {
+            // 收到数据后，监控自选股不返回数据的机制就不需要了
+            if (sRecLogCount < 1) {
+                sRecLogCount++;
+                Log.i(Log.SS_DATA, "REC- " + System.currentTimeMillis());
+            }
+            if (model.getScrollPos() == 0) { //缓存一页的数据，就算没网进来自选股页面也能看到
+                tableStruct = (StuffTableStruct) struct;
+            }
+            saveSelfcodesInCache(model);
+            if (model.getRows() > 0 && !isOnBackground) {
+                // 等待数据加载
+                mShowGuidePopRunnable = new ShowGuidePopRunnable();
+                postDelayed(mShowGuidePopRunnable, GuideManager.GUIDE_POSTDELAY_LONG_TIME);
+            }
+        } else {
+            Log.d(TAG, "doAfterReceiveData  model == null ");
+        }
+        mCurrentStuffTableStruct = (StuffTableStruct) struct;
+        // 不发送问财表头的时机
+        // 1. 不是实时数据
+        // 2. 不是问财表头排序状态
+        // 3. 不是缓存数据返回
+        if (!struct.isRealData() && !isWencaiSort && !isFirst) {
+            sendWencaiHttpRequest(EQConstants.INVALID, EQConstants.INVALID, false);
+        }
+        setAddStockLayoutVisible(struct);
+        isFirst = false;
+
+        //收到数据后更新持仓股对应的view
+        if (HexinUtils.isLandscape() && isCCGModel()) {
+            ISelfCodeHeaderPresent present = getContainer().getSelfCodeHeaderPresentImpl();
+            onLandCCGDataChange(present == null ? null : present.getLastAccount());
+        } else {
+            onCCGAccountOrDataChange();
+        }
+        isFromBackGroundRequest = false;
+
+        // 切换到主站下发的服务器的条件
+        // 1.列表中包含美股相关的股票
+        // 2.没有连接下发的服务器
+        if (isContainUsOrUsIndexStock
+                && !NASDAQHelper.isConnectInDispatchServer()) {
+            NASDAQHelper.notifySwitchServer();
+        }
+        doUsPanQianRequest(struct);
+        // 非实时数据且有需要除权因子的表头
+        if (!struct.isRealData() && mRequestHelper.hasZxjOrZxsy()) {
+            if (mCfqRequester == null) {
+                mCfqRequester = new SelfCfqRequester();
+            }
+            mCfqRequester.requestCfq(mFrameId, model.getValueById(HQDataConstant.HQ_CODE),
+                    model.getValueById(HQDataConstant.HQ_MARKETID));
+        }
+    }
+
+    private void doUsPanQianRequest(StuffBaseStruct struct) {
+        if (mUsPanqianClinet == null) {
+            mUsPanqianClinet = new SelfStockUSPanqianClinet();
+            mUsPanqianClinet.setOnUsPanqianUpdateListener(() -> {
+                if (isInScroll) {
+                    return;
+                }
+                SimpleListAdapter adapter = getSimpleListAdapter();
+                if (adapter != null && model != null) {
+                    adapter.notifyDataSetChanged();
+                }
+            });
+        }
+        mUsPanqianClinet.requestData(struct.isRealData(), model.getValueById(HQDataConstant.HQ_CODE),
+                model.getValueById(HQDataConstant.HQ_MARKETID),  getContext(), model);
+    }
+
+    /**
+     *
+     * @param sortId       选中的sortid
+     * @param sortOrder   排序规则， 升序or降序
+     * @param isAllRequest true 表示使用BankuaiModel的所有股票，  false 表示struct中的股票列表
+     */
+    private void sendWencaiHttpRequest(int sortId, int sortOrder, boolean isAllRequest) {
+        List<WencaiHead> httpHeads = getWencaiHead();
+        // 我们客户端 sortOrder规则和服务器方式不一样，转化
+        sortOrder = transfromSortOrder(sortOrder);
+        int sortIndex = transformSortId(sortId, httpHeads);
+        WencaiHead sortHead = null;
+        if (sortIndex >= 0 && sortIndex < httpHeads.size()) {
+            sortHead = httpHeads.get(sortIndex);
+        }
+        httpHeads = new ArrayList<>(mRequestHelper.getRequestWencaiHeaders());
+        if (sortHead != null) {
+            sortIndex = httpHeads.indexOf(sortHead);
+            if (sortIndex < 0) {
+                sortIndex = 0;
+                httpHeads.add(0, sortHead);
+            }
+        }
+        // 股票名称
+        List<String> marketList = new ArrayList<>();
+        List<String> stockList = new ArrayList<>();
+        if (isAllRequest) {
+            fillCurrentModelStockInf(stockList, marketList);
+        } else {
+            fillCurrentStructStockInfo(stockList, marketList);
+        }
+        sWencaiHeadDataManager.sendWencaiRequest(httpHeads, stockList, sortIndex, sortOrder, marketList);
+    }
+
+    private int transformSortId(int sortId, List<WencaiHead> httpHeads) {
+        int sortIndex = sortId;
+        if (sortId != EQConstants.INVALID) {
+            for (int i = 0; i < httpHeads.size(); i++) {
+                if (httpHeads.get(i).getId() == sortId) {
+                    sortIndex = i;
+                    break;
+                }
+            }
+        }
+        return sortIndex;
+    }
+
+    private int transfromSortOrder(int sortOrder) {
+        return sortOrder == DragableListViewItemExt.SORT_ORDER_DESC ? DragableListViewItemExt.SORT_ORDER_ASC
+                : DragableListViewItemExt.SORT_ORDER_DESC;
+
+    }
+
+    /**
+     *  将当前分组所有的股票找到
+     */
+    private void fillCurrentModelStockInf(List<String> stockList, List<String> marketList) {
+        List<EQBasicStockInfo> eqBasicStockInfos = null;
+        CategoryConfig config = CategoryDataProcessor.getInstance().getSelectCategoryConfig();
+        if (config != null) {
+            eqBasicStockInfos = config.getSupportStockList();
+        } else if (mBanKuaiModel != null) {
+            eqBasicStockInfos = mBanKuaiModel.getStockList();
+        }
+        if (eqBasicStockInfos != null) {
+            for (EQBasicStockInfo eqBasicStockInfo : eqBasicStockInfos) {
+                stockList.add(eqBasicStockInfo.mStockCode);
+                marketList.add(eqBasicStockInfo.mMarket);
+            }
+        }
+    }
+
+    /**
+     *  将当前自选股请求收到的struct中股票代码找到
+     */
+    private void fillCurrentStructStockInfo(List<String> stockList, List<String> marketList) {
+        String[] stocks = mCurrentStuffTableStruct.getData(ProtocalDef.HANGQING_STOCK_CODE_4);
+        String[] markets = mCurrentStuffTableStruct.getData(ProtocalDef.HANGQING_STOCK_MARKETID);
+        if (stocks != null && stocks.length > 0 && markets != null && stocks.length == markets.length) {
+            stockList.addAll(Arrays.asList(stocks));
+            marketList.addAll(Arrays.asList(markets));
+        }
+    }
+
+    @Override
+    public void onBackground() {
+        super.onBackground();
+        SettingDialogHelper.Companion.setCanShowCloseEntranceGuide(true);
+        MiddlewareProxy.removeSelfStockChangeListener(this);
+        AddSelfHeadManager.INSTANCE.setUpdateListener(null);
+        CategoryDataProcessor.getInstance().removeCategoryChangedListener(this);
+        isOnBackground = true;
+        MiddlewareProxy.unSubscribe(getInstanceId());
+        stopRequestUsPanqian();
+        saveSelfCodeToLocal();
+        SimpleListAdapter adapter = getSimpleListAdapter();
+        if (adapter != null) {
+            adapter.resetOverlay();
+        }
+
+        longClickPopWindowManager.dismiss();
+        if (mHeaderAccount != null) {
+            mHeaderAccount.dismissAllPop();
+            saveChiCangAccountType(mHeaderAccount.getLastAccount());
+        }
+
+        if (mListView != null) {
+            mListViewState = mListView.onSaveInstanceState();
+            mListView.finishScroll();
+        }
+        mUserChange = false;
+        isFromBackGroundRequest = true;
+        sWencaiHeadDataManager.removeWencaiCallBack(this);
+        if (!isClickLogin) {
+            RepositoryInstanceHolder.INSTANCE.setTableHeadDataListener(null);
+        }
+        isClickLogin = false;
+        removeCallbacks(mShowGuidePopRunnable);
+        GuideManager.getInstance().removeAllGuides();
+        if (mGestureHelper != null) {
+            mGestureHelper.onBackground();
+        }
+        dismissAllGuidePop();
+    }
+
+    private void stopRequestUsPanqian() {
+        if (mUsPanqianClinet != null) {
+            mUsPanqianClinet.stopRequest();
+        }
+    }
+
+    /**
+     * 持仓汇总
+     */
+    private void saveChiCangAccountType(BaseAccount baseAccount) {
+        if (baseAccount != null) {
+            SPUtils.saveStringSPValue(SPConfig.SP_ZIXUAN_SELECTED_CHICANG_ACCOUNT,
+                    SPConfig.SP_ZIXUAN_SELECTED_CHICANG_ACCOUNT, baseAccount.getAccount());
+        }
+    }
+
+    /**
+     * 保存自选股数据到本地
+     */
+    private void saveSelfCodeToLocal() {
+        if (MiddlewareProxy.getMobileDataCache() != null && tableStruct != null) {
+            final StuffTableStruct dataStruct = (StuffTableStruct) tableStruct.copy();
+            dataStruct.setRealData(false);
+            HexinThreadPool.getThreadPool().execute(() -> MiddlewareProxy.getMobileDataCache().saveSelfStockCacheNew(dataStruct.getCacheBuffer()));
+        }
+    }
+
+    private void handleGuidePopView(String[] values, int[] colors, int position) {
+        //持仓股颜色标记引导
+        if (colors.length > 0 && colors[0] == getContext().getResources().getColor(R.color.purple_9C27B0)) {
+            GlobalHandler.postDelay(() -> {
+                if (!isInScroll && position <= mLastPos && mFirstPos <= position) {
+                    showStockColorGuidePop(position, position - mFirstPos);
+                }
+            }, GuideManager.GUIDE_POSTDELAY_LONG_TIME);
+        }
+        //委托挂单自动添加到自选股列表引导
+        if (values.length >= 2 && !TextUtils.isEmpty(values[1]) &&
+                values[1].equals(SPUtils.getStringSPValue(SPConfig.SP_ADD_SELFSOTCK_AUTO_LIST_GUIDE, SPConfig.SP_ADD_SELFSOTCK_AUTO_LIST_GUIDE))) {
+            GlobalHandler.postDelay(() -> {
+                if (!isInScroll && position <= mLastPos && mFirstPos <= position) {
+                    showAddSelfStockGuidePop(position, position - mFirstPos);
+                }
+            }, GuideManager.GUIDE_POSTDELAY_LONG_TIME);
+        }
+    }
+
+
+    @Override
+    protected View getCustomItemView(int position, View convertView, ViewGroup parent,
+                                     AndroidColumnDragableTableModel mData, String[] defStrings, int[] defColors) {
+        int pos = 0;
+        /*
+         * 计算在model中的偏移量
+         */
+        if (mData != null) {
+            pos = mData.getScrollPos() <= 0 ? position : position - mData.getScrollPos();
+        }
+        SelfStockListViewItem tableItem;
+        if (convertView == null) {
+            tableItem = (SelfStockListViewItem) LayoutInflater.from(getContext()).inflate(R.layout.self_stock_list_view_item, null);
+            tableItem.setListViewItemHeight((int) getResources().getDimension(R.dimen.zixuan_listitem_height));
+            if (mGestureHelper != null) {
+                tableItem.setOnItemColumnClickListener(mGestureHelper);
+            }
+        } else {
+            tableItem = (SelfStockListViewItem) convertView;
+        }
+        tableItem.setFontType(mFontType);
+        tableItem.setCustomDivider(ThemeManager.getColor(getContext(), R.color.hangqing_tableitem_divider), true);
+        String stockcode = null;
+        String marketId;
+        if (isDataAvaliable(mData, pos)) {
+            stockcode = mData.getValueById(pos, ProtocalDef.SM_HQ_CODECODE);
+            marketId = getMarketId(position, mData, pos);
+            Log.i(Log.AM_REALDATA, "tit():stockcode=" + stockcode);
+            String[] values = mData.getValues()[pos];
+            int[] colors = mData.getColors()[pos];
+            handleGuidePopView(values, colors, position);
+            tableItem.setExtraDataIfNeed(pos, mData.extData, mData.headIndexInValues);
+            tableItem.setValues(values, colors, stockcode, mColumnWidths, changeShowType(mData.getStockType(pos)), mColumnFixWidth,
+                    mData.getFilterIndex(), mData.getStockType(pos), marketId);
+            setOtherDataForItem(tableItem, position, true, stockcode, marketId);
+            setSpecialDataForItem(tableItem, pos, mData.getStockType(pos), mData, false);
+        } else {
+            if (isStockGroupModeInZXG()) {
+                handleZXGItemView(tableItem, position, defStrings, defColors, stockcode);
+            } else {
+                tableItem.clearExtraDataIfNotNeed();
+                // 自选股列表滑动显示的是 载入中...
+                tableItem.setValues(defStrings,
+                        defColors,
+                        null,
+                        mColumnWidths,
+                        mDataShowType,
+                        mColumnFixWidth,
+                        mFilterIndex,
+                        EQConstants.STOCK_TYPE_DEFAULT,
+                        null
+                );
+                setOtherDataForItem(tableItem, position, false, null, null);
+                int stockType = mData == null ? EQConstants.STOCK_TYPE_DEFAULT : mData.getStockType(pos);
+                setSpecialDataForItem(tableItem, pos, stockType, null, true);
+            }
+        }
+        return tableItem;
+    }
+
+    protected void setOtherDataForItem(@NonNull SelfStockListViewItem tableItem, int pos,
+                                       boolean isHQDataAvailable, String code, String market) {
+    }
+
+
+    private int[] changeShowType(int stockType) {
+        return stockType == EQConstants.STOCK_TYPE_US ? mUsDataShowType : mDataShowType;
+    }
+
+    private void setSpecialDataForItem(SelfStockListViewItem tableView, int position, int stockType,
+                                  AndroidColumnDragableTableModel mData, boolean isDefault) {
+        if(mUsPanqianClinet != null && stockType == EQConstants.STOCK_TYPE_US ) {
+
+            if(isDefault) {
+                SelfStockBean valueTable = new SelfStockBean();
+                valueTable.setDefaultData(R.color.gray_999999);
+                tableView.updateUSPanQianData(valueTable);
+                return;
+            }
+
+            USSelfCodeColumnTableModel panQianData = mUsPanqianClinet.getUSSelfCodeTableModel();
+            if(panQianData != null) {
+                String code = mData.getValueById(position,ProtocalDef.HANGQING_STOCK_CODE_4) +
+                        "-" + mData.getValueById(position,ProtocalDef.HANGQING_STOCK_MARKETID);
+                tableView.updateUSPanQianData(panQianData.getStockValueByCode(code));
+            }
+        }
+
+        updateFundPriceDate(tableView, mData, position);
+    }
+
+    private void updateFundPriceDate(@NonNull SelfStockListViewItem tableView, @Nullable AndroidColumnDragableTableModel mData, int position) {
+        if (mData != null) {
+            //处理场外基金的最新价日期
+            String priceDate = mData.getValueById(position, ProtocalDef.HANGQING_STOCK_PRICE_DATE);
+            if (!TextUtils.isEmpty(priceDate) && !TextUtils.equals(priceDate, HsConstants.DOUBLE_LINE)) {
+                tableView.updateFundPriceData(Objects.requireNonNull(priceDate));
+            } else {
+                tableView.updateFundPriceData("");
+            }
+        } else {
+            tableView.updateFundPriceData("");
+        }
+    }
+
+    /**
+     *  将问财数据源放到struct中
+     *  其中， dataid为问财的headid，标志不同的表头。
+     */
+    public void initWencaiDataToStruct(StuffTableStruct stuffTableStruct) {
+        List<List<String>> wcDatalist = new ArrayList<>(mWencaiData);
+        // 在下面遍历的时候.getHeadList()拿到的对象可能会被新推送过来的数据给改变，为了防止异常这里拷贝使用
+        List<BaseHead> wcHeadList = new ArrayList<>(sWencaiHeadDataManager.getHeadList());
+
+        fillDefaultWencaiData(stuffTableStruct, mShowHeaders);
+        if (wcDatalist.size() != 0) {
+            List<List<String>> wcDataListWithoutCode = new ArrayList<>(wcDatalist);
+            // 获取当前第一条数据在总记录中的位置
+            int scroll = 0;
+            int type = stuffTableStruct.getDataType(ProtocalDef.EX_SCROLL_CURPOS);
+            if ((type & ProtocalDef.MD_TYPE_MASK) == ProtocalDef.TYPE_INT) {
+                Object o = stuffTableStruct.getExtData(ProtocalDef.EX_SCROLL_CURPOS);
+                scroll = o != null ? (Integer) o : 0;
+            }
+            if (wcDataListWithoutCode.size() != 0) {
+                int size = wcDataListWithoutCode.size();
+                if (size != wcHeadList.size()) {
+                    Log.e(TAG, " initWencaiDataToStruct  data not change  size: " + size);
+                    Log.e(TAG, " initWencaiDataToStruct    wcDataListWithoutCode:    " + wcDataListWithoutCode);
+                    Log.e(TAG, " initWencaiDataToStruct    wcHeadList:    " + wcHeadList);
+                    return;
+                }
+                for (int i = 0; i < size; i++) {
+                    int id = wcHeadList.get(i).getId();
+                    List<String> value = wcDataListWithoutCode.get(i);
+                    int valueSize = value.size();
+                    int realWencai = valueSize;  // 解决问财表头排序，切换tab回来数据错乱的问题。需要绑定scroll的位置信息
+                    // 只有问财排序状态下，才考虑使用部分问财数据填充struct
+                    if (!isWencaiSort) { // 不是全量请求
+                        Log.d(TAG, " wencai codesize != socket codesize ");
+                    } else {
+                        Log.d(TAG, " wencai codesize != socket codesize ");
+                        realWencai = valueSize >= scroll ? valueSize - scroll : valueSize;
+                    }
+                    int index = 0;
+                    String[] valueArray = new String[realWencai];
+                    for (int j = scroll; j < valueSize; j++) {
+                        valueArray[index] = value.get(j);
+                        index++;
+                    }
+                    value.toArray(valueArray);
+                    stuffTableStruct.putDataTable(id, valueArray);
+                }
+            }
+
+        }
+
+    }
+
+    private void handleZXGItemView(SelfStockListViewItem tableItem, int position, String[] defStrings, int[] defColors, String stockcode) {
+        if (selfStockInfoList != null && selfStockInfoList.size() > position) {
+            StockInfo stockInfo = selfStockInfoList.get(position);
+            if (stockInfo == null) {
+                tableItem.clearExtraDataIfNotNeed();
+                tableItem.setValues(defStrings, defColors, stockcode,
+                        mColumnWidths, mDataShowType, mColumnFixWidth, mFilterIndex,
+                        EQConstants.STOCK_TYPE_DEFAULT, null);
+                setOtherDataForItem(tableItem, position, false, stockcode, null);
+                setSpecialDataForItem(tableItem, position, EQConstants.STOCK_TYPE_DEFAULT, null,true);
+            } else {
+                stockcode = stockInfo.getCode();
+                String marketId = stockInfo.getMarket();
+                String stockname = stockInfo.getName();
+                if (TextUtils.isEmpty(stockname)) {
+                    stockname = getCurrentStockNameByCodeAndMarketId(model, stockcode, marketId);
+                    if (!DASH.equals(stockname)) {
+                        stockInfo.setStockName(stockname);
+                    }
+                }
+                defStrings = getDefaultStrings(defStrings, stockname);
+                if (hqData.get(stockcode + UNDERLINE + marketId) != null) {
+                    HQRowData rowData = hqData.get(stockcode + UNDERLINE + marketId);
+                    String[] values = rowData.values;
+                    int[] colors = rowData.colors;
+                    int type = rowData.type;
+                    tableItem.clearExtraDataIfNotNeed();
+                    tableItem.setValues(values, colors, stockcode,
+                            mColumnWidths, mDataShowType, mColumnFixWidth, mFilterIndex,
+                            type, marketId);
+                    setOtherDataForItem(tableItem, position, false, stockcode, marketId);
+                    setSpecialDataForItem(tableItem, position, EQConstants.STOCK_TYPE_DEFAULT, null,true);
+                } else {
+                    tableItem.clearExtraDataIfNotNeed();
+                    tableItem.setValues(defStrings, defColors, stockcode,
+                            mColumnWidths, mDataShowType, mColumnFixWidth, mFilterIndex,
+                            EQConstants.STOCK_TYPE_DEFAULT, marketId);
+                    setOtherDataForItem(tableItem, position, false, stockcode, marketId);
+                    setSpecialDataForItem(tableItem, position, EQConstants.STOCK_TYPE_DEFAULT, null, true);
+                }
+                setOtherDataForItem(tableItem, position, false, stockcode, marketId);
+            }
+        } else {
+            tableItem.clearExtraDataIfNotNeed();
+            tableItem.setValues(defStrings, defColors, stockcode, mColumnWidths,
+                    mDataShowType, mColumnFixWidth, mFilterIndex,
+                    EQConstants.STOCK_TYPE_DEFAULT, null);
+            setOtherDataForItem(tableItem, position, false, stockcode, null);
+            setSpecialDataForItem(tableItem, position, EQConstants.STOCK_TYPE_DEFAULT, null, true);
+        }
+        setSpecialDataForItem(tableItem, position, EQConstants.STOCK_TYPE_DEFAULT, null,true);
+    }
+
+    /**
+     * 获取 MarketId
+     *
+     * @param position item 的位置
+     * @param pos      相应的valuez在mData中的位置
+     */
+    private String getMarketId(int position, AndroidColumnDragableTableModel mData, int pos) {
+        String marketId = mData.getValueById(pos, ProtocalDef.HANGQING_STOCK_MARKETID);
+        if (TextUtils.isEmpty(marketId) && position < selfStockInfoList.size()) {
+            StockInfo stockInfo = selfStockInfoList.get(position);
+            if (stockInfo != null) {
+                marketId = stockInfo.getMarket();
+            }
+        }
+        return marketId;
+    }
+
+    /**
+     * 判断数据是否有效
+     */
+    private boolean isDataAvaliable(AndroidColumnDragableTableModel dataModel, int pos) {
+        return dataModel != null && pos >= 0 && pos < dataModel.getRows()
+                && dataModel.getValues() != null && dataModel.getColors() != null
+                && dataModel.getValues().length == dataModel.getColors().length;
+    }
+
+    /**
+     * 把默认数据的第一项填充为股票名称
+     */
+    private String[] getDefaultStrings(String[] defStrings, String codeName) {
+        if (defStrings != null && defStrings.length > 0) {
+            defStrings[0] = codeName;
+        } else {
+            int count = mShowHeaders.size();
+            defStrings = new String[count];
+            for (int i = 0; i < count; i++) {
+                if (i == 0) {
+                    defStrings[i] = codeName;
+                } else {
+                    defStrings[i] = DASH;
+                }
+            }
+        }
+        return defStrings;
+    }
+
+    @Override
+    public void request() {
+        // 监控页面切换过来时发请求的时间，如果有收到过数据，就不再监听了
+        if (MiddlewareProxy.getSelfStockInfoSize() <= 0) {
+            Log.i(Log.SS_DATA, "REQ- no push self->" + System.currentTimeMillis());
+        }
+        request(false);
+    }
+
+    public void request(boolean needFlush) {
+        if (isWencaiSort) {
+            sendWencaiHttpRequest(header.getSortId(), header.getSortOrder(), true);
+        } else {
+            subscribeRequest(needFlush);
+        }
+    }
+
+    /**
+     * 自选股分组的请求
+     */
+    public void stockGroupRequest() {
+        if (MiddlewareProxy.getCurrentPageId() == this.mFrameId) {
+            if (isWencaiSort) {
+                int sortId = header.getSortId();
+                int order = header.getSortOrder();
+                sendWencaiHttpRequest(sortId, order, true);
+            } else {
+                // 切回自选股也进入此处流程，因为切成自选股后，也可能出现分组数量比自选股数量多的情况
+                String requestText = buildRequestTextWithStocksSizeLimit();
+                Log.d(TAG, " stockGroupRequest   " + requestText);
+                subscribeData(requestText);
+            }
+        }
+    }
+
+    protected void subscribeData(@NonNull String requestText) {
+        MiddlewareProxy.addSubscribeRequestToBuff(mFrameId, mPageId, getInstanceId(),
+                requestText, mIDs, null, RTReqInfo.TYPE_TABLE);
+        MiddlewareProxy.subscribeRequest(mFrameId, mPageId, getInstanceId(), requestText, true, false,
+                mIDs, null, RTReqInfo.TYPE_TABLE);
+    }
+
+    /**
+     * 发送问财表头自选股请求
+     */
+    public void sendWencaiHeadSocketRequest(List<String> list) {
+        if (MiddlewareProxy.getCurrentPageId() == this.mFrameId) {
+            int start = getStartRow(list.size());
+            String requestText = getStockGroupRequestText(false, start);
+            subscribeData(requestText);
+        }
+
+    }
+
+    private int getStartRow(int stockSize) {
+        int start;
+        // 保证一屏有数据
+        int MAX_OFFSET = Math.max(OFFSET + OFFSET_THREE, listview.getChildCount());
+        if (stockSize < MAX_REQUEST_COUNT) {
+            start = 0;
+        } else {
+            // 可能存在firstPos - MAX_OFFSET - stockSize小于一屏的股票数量的场景
+            // 此时会导致上面的股票没有数据
+            // 例如，分组A有24支股票，分组B有很多股票，当在分组B中滑动至第35支股票时
+            // 切换至分组A，此时mFirstPos = 35，start = 24 <= 24
+            // 不会进入下方的if中，这种情况下，分组A中所有的股票都没有数据
+            start = Math.min(mFirstPos, stockSize) - MAX_OFFSET;
+            if (start < 0) {
+                start = 0;
+            }
+        }
+        return start;
+    }
+
+    public void subscribeRequest(){
+        subscribeRequest(true);
+    }
+
+    public void subscribeRequest(boolean needFlush) {
+        try {
+            //只有当前页面展示时才发送请求
+            if (MiddlewareProxy.getCurrentPageId() == this.mFrameId) {
+                String requestText = buildRequestTextWithStocksSizeLimit();
+                lastInstanceId = getInstanceId();
+                MiddlewareProxy.addSubscribeRequestToBuff(mFrameId, mPageId, lastInstanceId, requestText,
+                        mIDs, null, RTReqInfo.TYPE_TABLE);
+            }
+            if (needFlush) {
+                RequestEmitter.build().background(false).requestFlush();
+            }
+        }catch (IllegalArgumentException e){
+            CustomExceptionSave.saveCustomException(TAG, "subscribeRequest error:" + e.getLocalizedMessage());
+        }
+    }
+
+    /**
+     * 生成请求文本，限制startRow参数不要超过股票个数，防止请求不到数据
+     */
+    private String buildRequestTextWithStocksSizeLimit() {
+        int total = mBanKuaiModel == null || mBanKuaiModel.isZiXuan() ? MiddlewareProxy.getSelfStockInfoSize() :
+                mBanKuaiModel.getStockList().size();
+        int start = getStartRow(total);
+        String name = mBanKuaiModel != null ? mBanKuaiModel.getDisplayedName() : "null";
+        HXLog.AM_SELFCODE()
+                .i(TAG, "buildRequestTextWithStocksSizeLimit name : {}, total : {}, mFirstPos : {}, start : {}", name,
+                        total, mFirstPos, start);
+        return getStockGroupRequestText(false, start);
+    }
+
+    public static void setNeedRestore(boolean isNeedRestore) {
+        HangQingSelfcodeTableLandscape.isNeedRestore = isNeedRestore;
+    }
+
+    @Override
+    protected void requestData(@NonNull String requestText) {
+        RequestEmitter.getHqManager()
+                .addToBuff(mFrameId, ProtocalDef.PAGEID_ZXG_LANDSCAPE, getInstanceId(), requestText);
+        super.requestData(requestText);
+    }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        if (getModel() != null && getBaseBaseDataCollect() != null) {
+            if (view instanceof DragableListViewItem) {
+                SelfCodeKaiHuEntryMgr.getInstance().recordOnSelfCodeItemClickEvent();
+                EQBasicStockInfo basicStockInfo = ((DragableListViewItem) view).getStockInfo();
+                if (basicStockInfo != null && hqData.get(basicStockInfo.mStockCode + UNDERLINE + basicStockInfo.mMarket) != null) {
+                    if ( basicStockInfo.mStockCode.equals(EQConstants.XSB_CZ_STOCKCODE)) {
+                        performOnItemClickGG(position, ProtocalDef.FRAMEID_GZ_KLINE_PORTRAIT, view, basicStockInfo);
+                        return;
+                    }
+                    //场外基金跳转过滤
+                    if (MarketFilter.onSelfStockItemClickOTCFund(basicStockInfo, getContext())) {
+                        return;
+                    }
+                    switch (mPageType) {
+                        case PAGE_TYPE_GG:
+                            perforOnItemClick(position, ProtocalDef.FRAMEID_STOCK_GG_PRICE, basicStockInfo);
+                            break;
+                        case PAGE_TYPE_HP:
+                            performOnItemClickGG(position, ProtocalDef.FRAMEID_GG_FENSHI_LANDSCAPE, view, basicStockInfo);
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 点击类表的某一行
+     */
+    @Override
+    protected void sendCbasInfo(int frameId, EQBasicStockInfo basicStockInfo, int position) {
+        if (frameId == EQConstants.INVALID) {
+            return;
+        }
+
+        // 埋点
+        String pageObj = getPageObj(mBanKuaiModel);
+        if (!TextUtils.isEmpty(pageObj)) {
+            if (mBanKuaiModel.isDynamic()) {
+                HexinCBASUtil.setCurCbasModelExtraTargid(CBASConstants.CBAS_DG_WJ + "_" + mBanKuaiModel.getQuery());
+            }
+            String builder = pageObj + CBASConstants.CBAS_SPLIT_DIAN + header.getSortByName() +
+                    CBASConstants.CBAS_SPLIT_DIAN + (CBASConstants.CBAS_HQ_LIST_MOREN.equals(header.getSortByName())
+                    ? CBASConstants.CBAS_HQ_LIST_PAIXU : (header.getSortOrder() == 0 ? CBASConstants.CBAS_ORDER_DESC
+                    : CBASConstants.CBAS_ORDER_ASC)) +
+                    CBASConstants.CBAS_SPLIT_DIAN + (position + 1);
+            HexinCBASUtil.sendStandardJumpPageCbas(builder, frameId, null, false, basicStockInfo.mStockCode);
+        }
+    }
+
+    /**
+     * 执行点击跳转事件,包括竖屏进入个股综合报价页面，横盘进入分时页面
+     * @param frameid  下一个页面frameId
+     */
+    public void perforOnItemClick(int position, int frameid, EQBasicStockInfo basicStockInfo) {
+        // 保存股票列表，用于横屏上下股切换功能
+        if (basicStockInfo == null) {
+            return;
+        }
+        saveStockListStruct(position, getModel());
+        EQGotoFrameAction gotoFrameAction = EQGotoUnknownFrameAction.createEQAction(frameid, basicStockInfo.mMarket);
+        sendCbasInfo(gotoFrameAction.getGotoFrameId(), basicStockInfo, position);
+        // 有问题
+        EQGotoParam gotoParam = new EQGotoParam(EQParam.PARAM_TYPE_STOCKINFO, basicStockInfo);
+        gotoParam.setUsedForAll();
+        gotoFrameAction.setParam(gotoParam);
+        MiddlewareProxy.executorAction(gotoFrameAction);
+    }
+
+    /**
+     * 根据stockCode从当前的列表对象模型中查找到对应的stockName
+     */
+    private String getCurrentStockNameByCodeAndMarketId(AndroidColumnDragableTableModel models, String stockCode, String marketId) {
+        String stockName = DASH;
+        if (models == null || models.getValues() == null || models.getValues().length == 0 || stockCode == null
+                || mStockCodeIndex == -1 || mStockNameIndex == -1 || mMarketIdIndex == -1) {
+            return stockName;
+        }
+        String[][] values = models.getValues();
+        int length = values.length;
+        stockName = getStockName(stockCode, marketId, stockName, values, length);
+        return stockName;
+    }
+
+    private String getStockName(String stockCode, String marketId, String stockName, String[][] values, int length) {
+        for (int i = 0; i < length; i++) {
+            String[] stockModel = values[i];
+            boolean isMarketOk = HexinUtils.isMarketIdAvailable(marketId);
+            if (isMarketOk) {
+                if (stockModel.length == mIDs.length && stockCode.equals(stockModel[mStockCodeIndex]) &&
+                        marketId.equals(stockModel[mMarketIdIndex])) {
+                    stockName = stockModel[mStockNameIndex];
+                    break;
+                }
+            } else {
+                if (stockModel.length == mIDs.length && stockCode.equals(stockModel[mStockCodeIndex])) {
+                    stockName = stockModel[mStockNameIndex];
+                    break;
+                }
+            }
+        }
+        return stockName;
+    }
+
+    //自选股保存切换列表
+    @Override
+    public void saveStockListStruct(int position, AndroidColumnDragableTableModel models) {
+        // 不排序情况下,保存的股票列表为完整的股票列表
+        // 排序情况下,保存的股票列表为后台返回的24条股票(24 = 可视范围的8条 + 上下8条)
+        if (mBanKuaiModel != null && mBanKuaiModel.getStockList().size() > 0) {
+            if (!isSorting()) {
+                com.hexin.util.data.List stockNameList = new com.hexin.util.data.List();
+                com.hexin.util.data.List stockCodeList = new com.hexin.util.data.List();
+                com.hexin.util.data.List stockMarketIdList = new com.hexin.util.data.List();
+                List<EQBasicStockInfo> bkStockList = mBanKuaiModel.getStockList();
+                for (int i = 0; i < bkStockList.size(); i++) {
+                    EQBasicStockInfo stockInfo = bkStockList.get(i);
+                    if (stockInfo != null) {
+                        //这里为了解决从服务器同步过来的美股代码没有对应的名称的问题，使用列表中的美股名称
+                        String stockName = getCurrentStockNameByCodeAndMarketId(models, stockInfo.mStockCode, stockInfo.mMarket);
+                        if (isHaveNoStockName(stockInfo.mStockName)) {
+                            stockNameList.add(stockName);
+                            if (!DASH.equals(stockName)) {
+                                stockInfo.mStockName = stockName;
+                            }
+                        } else {
+                            if (isNotGetRightStockName(stockInfo.mStockName, stockName)) {
+                                EQBasicStockInfo dBasicStockInfo = MiddlewareProxy.getStockInfoFromDB(new EQBasicStockInfo(stockInfo.mStockName,
+                                        stockInfo.mStockCode, stockInfo.mMarket));
+                                if (dBasicStockInfo != null) {
+                                    dBasicStockInfo.mStockName = stockName;
+                                }
+                                stockNameList.add(stockName);
+                            } else {
+                                stockNameList.add(stockInfo.mStockName);
+                            }
+                        }
+                        stockCodeList.add(stockInfo.mStockCode);
+                        if (TextUtils.isEmpty(stockInfo.mMarket)) {
+                            String marketId = MiddlewareProxy.getStockMarket(stockInfo.mStockCode);
+                            stockMarketIdList.add(marketId == null ? "" : marketId);
+                        } else {
+                            stockMarketIdList.add(stockInfo.mMarket);
+                        }
+                    }
+                } //END FOR
+                TitleLabelListStruct titleLabelListStruct = new TitleLabelListStruct();
+                titleLabelListStruct.setStockListIndex(position);
+                titleLabelListStruct.setStockNameList(stockNameList);
+                titleLabelListStruct.setStockCodeList(stockCodeList);
+                titleLabelListStruct.setStockMarketIdList(stockMarketIdList);
+                titleLabelListStruct.setSameMarket(HexinUtils.isAllSameMarketIdInList(stockMarketIdList));
+                // 动态分组和持仓股不需要记录sn,因为股票列表是固定的,不需要同步
+                if (!isDynamicOrCCGBanKuai(mBanKuaiModel)) {
+                    titleLabelListStruct.setBanKuaiSn(mBanKuaiModel.getSn());
+                }
+                //过滤场外基金
+                titleLabelListStruct = MarketFilter.filterOutFundFromList(titleLabelListStruct);
+                MiddlewareProxy.saveTitleLabelListStruct(titleLabelListStruct);
+            } else {
+                models.saveTitleStock(position, true, mBanKuaiModel.getSn());
+            }
+        } else {
+            super.saveStockListStruct(position, models);
+        }
+    }
+
+    /**
+     * 判断getCurrentStockNameByCodeAndMarketId()方法拿到的stockName是否为空名字
+     *
+     * @param stockName getCurrentStockNameByCodeAndMarketId()方法拿到的stackName
+     */
+    private boolean isHaveNoStockName(String stockName) {
+        return (DASH.equals(stockName) || TextUtils.isEmpty(stockName)
+                || "null".equals(stockName));
+    }
+
+    /**
+     * 判断请求获得的stockName是否是不正确的
+     *
+     * @param localStockName    在本地stockInfoList中保存的stackName
+     * @param acquiredStockName getCurrentStockNameByCodeAndMarketId()方法拿到的stackName
+     */
+    private boolean isNotGetRightStockName(String localStockName, String acquiredStockName) {
+        return (!TextUtils.equals(localStockName, acquiredStockName) && !TextUtils.isEmpty(acquiredStockName)
+                && !"null".equals(acquiredStockName) && !DASH.equals(acquiredStockName));
+    }
+
+    private void stuffSelfcodeList() {
+        Vector<StockInfo> selfcodeList = MiddlewareProxy.getSelfStockInfoList();
+        if (selfcodeList != null) {
+            synchronized (selfcodeList) {
+                selfStockInfoList.clear();
+                selfStockInfoList.addAll(selfcodeList);
+            }
+        }
+    }
+
+    private boolean performItemLongClick(View view, int position) {
+        if (mBanKuaiModel == null || getModel() == null || position < 0 || !(view instanceof DragableListViewItem)) {
+            return false;
+        }
+
+        // 动态分组横屏模式下, 不显示编辑弹窗
+        Configuration conf = getResources().getConfiguration();
+        if (isDynamic() && conf.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            return false;
+        }
+
+        EQBasicStockInfo basicStockInfo = ((DragableListViewItem) view).getStockInfo();
+        if (basicStockInfo != null && basicStockInfo.isStockCodeValiable()) {
+            if (!CommonUtils.isNetWorking(HexinApplication.getHxApplication())) {
+                new StockGroupToastDialog(getContext(), StockGroupToastDialog.TYPE_NETWORK_FAILURE).show();
+                return true;
+            }
+
+            // 埋点
+            String pageObj = getPageObj(mBanKuaiModel);
+            if (!TextUtils.isEmpty(pageObj)) {
+                String builder = pageObj +
+                        CBASConstants.CBAS_SPLIT_DIAN + CBASConstants.CBAS_MENU;
+                HexinCBASUtil.sendStandardFunctionCbasByClick(builder, false);
+            }
+            longClickPopWindowManager.onLongClick(view, basicStockInfo, position);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 自选股分组模式的选中的是自选股ITEM并且是竖屏
+     *
+     */
+    private boolean isDynamicOrCCGBanKuai(BanKuaiModel banKuaiModel) {
+        boolean isDynamicOrCCGBanKuai = false;
+        if (banKuaiModel != null) {
+            if (banKuaiModel.isDynamic() || banKuaiModel.isCCG()) {
+                isDynamicOrCCGBanKuai = true;
+            }
+        }
+        return isDynamicOrCCGBanKuai;
+    }
+
+    /**
+     * 自选股分组模式的选中的是自选股ITEM
+     */
+    boolean isStockGroupModeInZXG() {
+        return mBanKuaiModel == null || mBanKuaiModel.isZiXuan();
+    }
+
+    /**
+     * 自选股分组模式的选中的是持仓股ITEM
+     */
+    boolean isCCGModel() {
+        return mBanKuaiModel != null && mBanKuaiModel.isCCG();
+    }
+
+    boolean isDynamic() {
+        return mBanKuaiModel != null && mBanKuaiModel.isDynamic();
+    }
+
+    @Override
+    public void onTouch(MotionEvent ev) {
+        super.onTouch(ev);
+        mCurrentFingerPointX = ev.getRawX();
+        if (mGestureHelper != null) {
+            mGestureHelper.onTouchEvent(ev);
+        }
+    }
+
+    public float getCurrentFingerPointX() {
+        return mCurrentFingerPointX;
+    }
+
+    private void restoreListViewWhenUserChange() {
+        if (getUIHandler() != null) {
+            getUIHandler().post(() -> {
+                if (mListView != null) {
+                    if (Build.VERSION.SDK_INT >= NOUGAT) {
+                        if (!mUserChange) {
+                            //因为设置adapter会置0左移的位置，所以需记录该位置
+                            //此方法会回调两次，需要在第一次记录位置
+                            mListView.setItemScrollXBeforeRestore(mListView.getMoveItemScrollX());
+                        }
+                        //7.0 setSelection(index)，无法达到效果，这里通过重新设置adapter来回到第一条数据
+                        mListView.setAdapter(getSimpleListAdapter());
+                    } else {
+                        mListView.setSelection(0);
+                    }
+                    mUserChange = true;
+                    setmListViewStatus(FLAG_LISTVIEW_RESTORE);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onNameChanged(String oldUser, String newUser) {
+        //切换用户后，列表位置重置。
+        mFirstPos = 0;
+        mLastPos = 0;
+        restoreListViewWhenUserChange();
+        restoreCCGLayoutWhenUserChange();
+    }
+
+    /**
+     * 用户改变时清除持仓股相关操作
+     */
+    private void restoreCCGLayoutWhenUserChange() {
+        if (getUIHandler() != null) {
+            getUIHandler().post(() -> {
+                if (mHeaderAccount != null) {
+                    mHeaderAccount.setShowAccount(null, false);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onSidChanged(String oldSid, String newSid) {
+    }
+
+    public void setBanKuaiModel(BanKuaiModel banKuaiModel) {
+        if (banKuaiModel != null) {
+            this.mBanKuaiModel = banKuaiModel.clone();
+            if (!isCCGModel() && mCCGSyncLayout != null) {
+                mCCGSyncLayout.setVisibility(GONE);
+            }
+        }
+    }
+
+    // 设置添加股票按钮可见状态
+    private void setAddStockLayoutVisible(StuffBaseStruct struct) {
+        if (tableStruct == null) {
+            Log.d(TAG, "setAddStockLayoutVisible tableStruct == null | misFirstReceive= ");
+        } else {
+            Log.d(TAG, "setAddStockLayoutVisible tableStruct.row= " + tableStruct.getRow());
+        }
+        if (isCCGModel()) {
+            return;
+        }
+        if (mCurrentStuffTableStruct != null && mCurrentStuffTableStruct.isRealData()) {
+            Log.d(TAG, " struct is realData  return  ");
+            return;
+        }
+        // 添加按钮是否显示
+        boolean addVisible = false;
+        boolean isHaveData = false;
+        if (struct instanceof StuffTableStruct) {
+            isHaveData = ((StuffTableStruct) struct).getRow() > 0;
+        }
+        if (!MiddlewareProxy.isUserInfoTemp() && !isHaveData) {
+            addVisible = true;
+
+        }
+
+        // 根据动态分组的状态, 设置"添加股票按钮"可见状态
+        addVisible = isVisibleForDynamicGroup(addVisible);
+
+        ViewParent viewParent = getParent();
+        if (viewParent instanceof HangQingSelfCodeTableContainer) {
+            HangQingSelfCodeTableContainer codeTableContainer = (HangQingSelfCodeTableContainer) viewParent;
+            mListView.setVisibility(addVisible ? INVISIBLE : VISIBLE);
+            Log.d(TAG, "setAddStockLayoutVisible  addStockLayout visible " + addVisible);
+            if (!addVisible && getSimpleListAdapter() != null) {
+                mListView.requestLayout();
+                getSimpleListAdapter().notifyDataSetChanged();
+            }
+            codeTableContainer.setAddStockLayoutVisible(addVisible);
+            codeTableContainer.setDynamicTipsVisible();
+        }
+    }
+
+    public BanKuaiModel getBanKuaiModel() {
+        return this.mBanKuaiModel;
+    }
+
+    public void refreshData() {
+        if (simpleListAdapter != null) {
+            simpleListAdapter.notifyDataSetChanged();
+        }
+    }
+
+    public List<WencaiHead> getWencaiHead() {
+        List list = new ArrayList();
+        for (BaseHead baseHead : mShowHeaders) {
+            if (baseHead instanceof WencaiHead) {
+                list.add(baseHead);
+            }
+        }
+        return list;
+    }
+
+    public ArrayList<Integer> getFilterIndex() {
+        return mFilterIndex;
+    }
+
+    /**
+     *  问财表头数据返回监听
+     *  1. 如果发送的时问财排序请求，首先发送问财请求，然后通过返回的股票列表发送主站请求
+     *  2. 如果首先发送的是行情表头，直接合并问财数据，更新视图
+     */
+    @Override
+    public void wencaiDataCallback(@NonNull WencaiDataModel data, final Map<WencaiHead, String> timeStamp) {
+        post(new Runnable() {
+            @Override
+            public void run() {
+                mWencaiData.clear();
+                mWencaiData.addAll(data.getDataList());
+                if (isWencaiSort) {
+                    sendSocketRequest(data.getDataList());
+                } else {
+                    updateHqView();
+                }
+                updateHeaderTimeStamp(timeStamp);
+            }
+        });
+    }
+
+    @SuppressWarnings({"java:S3776", "java:S134"})
+    private void updateHeaderTimeStamp(Map<WencaiHead, String> timeStamps) {
+        if (mTimeStamps == null || mBaseDataCollect == null || timeStamps == null || timeStamps.size() == 0) {
+            return;
+        }
+        int length = mShowHeaders.size();
+        BaseHead baseHead;
+        int newColumnWidth;
+        for (int i = 0, filterCount = 0; i < length; i++) {
+            baseHead = mShowHeaders.get(i);
+            if (mFilterIndex.contains(i) || baseHead.getId() == STOCK_NAME_DATA_ID) {
+                filterCount++;
+            } else {
+                if (!(baseHead instanceof WencaiHead)) {
+                    continue;
+                }
+                String timestamp = timeStamps.get(baseHead);
+                if (!TextUtils.isEmpty(timestamp)) {
+                    newColumnWidth = getHeaderWidth(baseHead.getMobileShowName(), timestamp);
+                    mTimeStamps[i - filterCount] = timestamp;
+                    if (newColumnWidth != mColumnWidths[i - filterCount]) {
+                        mColumnWidths[i - filterCount] = newColumnWidth;
+                    }
+                }
+            }
+        }
+        ((SelfStockListViewHeader) header).setValues(
+                getBaseBaseDataCollect().mTableHeaders, mFilterIndex, mColumnWidths, mTimeStamps, mUsDataShowType);
+    }
+
+    private void updateHqView() {
+        doBeforeParseStruct(mCurrentStuffTableStruct, true);
+        final AndroidColumnDragableTableModel tmpModel = parseReceiveData(mCurrentStuffTableStruct);
+        if (tmpModel == null) {
+            return;
+        }
+        fillModelExtData(mCurrentStuffTableStruct, tmpModel);
+        model = filterDelistStock(tmpModel);
+        processTableModel();
+        simpleListAdapter.setItems(model);
+        postInvalidate();
+    }
+
+    /**
+     * 判断股票是否是停牌，如果是停牌，需要将当前屏幕的最后一列的数据值设置为“停牌”
+     * 通过数据项ID 34393 的第十一位判断是否是停牌
+     * @param model 数据源
+     */
+    protected AndroidColumnDragableTableModel filterDelistStock(AndroidColumnDragableTableModel model) {
+        int[] ids  = model.ids;
+        int index = -1;
+        for (int i = 0; i < ids.length; i++) {
+            if (ids[i] == ProtocalDef.HANGQING_STOCK_RZRQ) {
+                index = i;
+            }
+        }
+        String[][] values = model.getValues();
+        int showTPIndex = findTPIndex(model);
+        for (int i = 0; i < values.length; i++) {
+            if (values[i].length >= index && index >= 0) {
+                String flagStr = values[i][index];
+                if (HexinUtils.isValidStockFlag(flagStr)) {
+                    long flag = Long.parseLong(flagStr.trim());
+                    if ((flag & EQConstants.FLAG_DELIST) == EQConstants.FLAG_DELIST
+                            && showTPIndex < values[i].length && showTPIndex > 0) {
+                        values[i][showTPIndex] = AndroidColumnDragableTableModel.DELIST;
+                    }
+                }
+            }
+        }
+        model.setValues(values);
+        return model;
+    }
+
+    /**
+     *  找到停牌是第一个位置
+     *  规则：
+     *  1. 如果包含涨跌幅表头，显示涨跌幅表头位置
+     *     否则显示在最新的位置
+     */
+    private int findTPIndex(AndroidColumnDragableTableModel model) {
+        int[] ids = model.getIds();
+        if (ids != null) {
+            for (int i = 0; i < ids.length; i++) {
+                int id = ids[i];
+                if (id == ProtocalDef.HANGQING_AG_ZHANGFU) {
+                    return i;
+                }
+            }
+
+            for (int i = 0; i < ids.length; i++) {
+                int id = ids[i];
+                if (id == ProtocalDef.HANGQING_STOCK_PRICE) {
+                    return i;
+                }
+            }
+        }
+        return EQConstants.INVALID;
+    }
+
+    private void sendSocketRequest(List<List<String>> data) {
+        List<String> codes = new ArrayList<>();
+        if (data.size() > 0) {
+            codes = sWencaiHeadDataManager.getWencaiCodeList();
+        } else if (mBanKuaiModel != null) {
+            setWencaiSort(false);
+        }
+        sendWencaiHeadSocketRequest(codes);
+    }
+
+    @Override
+    public void onCCGChange(@NonNull List<EQBasicStockInfo> list, final boolean isFromCache) {
+        // 建立局部变量指向当前板块，即使有其他线程修改了mBanKuaiModel，下面的处理也不会影响当前显示model
+        BanKuaiModel model = mBanKuaiModel;
+        // 在处理之前必须保证model所指向的是持仓股，否则不允许操作
+        if (model != null && model.getSn() == StockGroupConstant.BANKUAI_SN_CCG) {
+            // 这里确保了清空和更改的是持仓股而不是别的分组
+            BanKuaiModel ccgModel = StockGroupManager.getInstance().getBanKuaiModelBySn(model.getSn());
+            if (ccgModel != null) {
+                ccgModel.clearAndAddStock(list);
+            }
+            model.clearAndAddStock(list);
+            if (CommonUtils.isNetWorking(HexinApplication.getHxApplication())) {
+                // 这里的请求发送预期是因为自选列表变成了持仓股才发送请求，所以这里必须判断当前板块的属性
+                if (mBanKuaiModel != null && mBanKuaiModel.getSn() == model.getSn()) {
+                    stockGroupRequest();
+                }
+            } else {
+                tableStruct = null;
+                post(() -> {
+                    // 线程切换了，在主线程里如果发现当前不是持仓股了，也就没有必要进行持仓股的操作了
+                    if (mBanKuaiModel != null && mBanKuaiModel.getSn() == StockGroupConstant.BANKUAI_SN_CCG) {
+                        if (HexinUtils.isLandscape()) {
+                            ISelfCodeHeaderPresent present = getContainer().getSelfCodeHeaderPresentImpl();
+                            onLandCCGDataChange(present == null ? null : present.getLastAccount());
+                        } else {
+                            onCCGAccountOrDataChange();
+                        }
+                    }
+                });
+            }
+            final int size = list.size();
+            post(() -> {
+                if (mHeaderAccount != null) {
+                    // 线程切换了，在主线程里如果发现当前不是持仓股了，就不需要显示手动同步的视图了
+                    if (mBanKuaiModel != null && mBanKuaiModel.getSn() == StockGroupConstant.BANKUAI_SN_CCG && !HexinUtils.isLandscape()) {
+                        updateSyncLayout(isFromCache, size);
+                    }
+                }
+            });
+        }
+        //这里走一遍添加股票按钮的显示逻辑，因为持仓股不需要该按钮，自测时候该按钮却有显示
+        changeAddStockBtnStatus();
+    }
+
+    /**
+     * 更新同步的状态
+     */
+    private void updateSyncLayout(boolean isFromCache, int size) {
+        final BaseAccount account = mHeaderAccount.getLastAccount();
+        if (account == null) {
+            if (mCCGSyncLayout != null && mCCGSyncLayout.getVisibility() == VISIBLE) {
+                mCCGSyncLayout.setVisibility(GONE);
+            }
+            return;
+        }
+        TextView ccgSyncTime, ccgSyncNow;
+        if (mCCGSyncLayout == null) {
+            ViewStub stub = findViewById(R.id.ccg_view_stub);
+            mCCGSyncLayout = (LinearLayout) stub.inflate();
+        }
+        //汇总持仓选项无需显示
+        if (Objects.equals(account.getAccount(), SelfCodeHeaderPresentImpl.ACCOUNT_ALL)) {
+            mCCGSyncLayout.setVisibility(GONE);
+            return;
+        }
+        ccgSyncTime = mCCGSyncLayout.findViewById(R.id.ccg_sync_time);
+        ccgSyncNow = mCCGSyncLayout.findViewById(R.id.ccg_sync_now);
+        ccgSyncTime.setTextColor(CommonThemeManager.getColor(getContext(), R.color.ccg_cc_all));
+        ccgSyncNow.setTextColor(CommonThemeManager.getColor(getContext(), R.color.ccg_protocol));
+        ccgSyncNow.setText(LocalCalUtil.isHasQssupportLocalCal() ? R.string.ccg_update_now : R.string.ccg_sync_now);
+        boolean isCache = account.isSynccc() && mHeaderAccount.hasCache() && isFromCache;
+        if (isCache) {
+            if (isNeedShowSync() && size > 0) {
+                String prefix = getResources().getString(LocalCalUtil.isHasQssupportLocalCal() ? R.string.ccg_update_time : R.string.ccg_sync_time);
+                String time =  ChiCangSyncManagerUtil.formatDate(mHeaderAccount.getLastSyncTime());
+                ccgSyncTime.setText(prefix + time);
+                mCCGSyncLayout.setVisibility(VISIBLE);
+                ccgSyncTime.setVisibility(VISIBLE);
+                ccgSyncNow.setVisibility(VISIBLE);
+            } else {
+                mCCGSyncLayout.setVisibility(GONE);
+                return;
+            }
+        } else {
+            mCCGSyncLayout.setVisibility(GONE);
+            return;
+        }
+        ccgSyncNow.setOnClickListener(v -> {
+            if (mHeaderAccount != null) {
+                mHeaderAccount.syncChiCang(account);
+                //埋点
+                String pageObj = getPageObj(mBanKuaiModel);
+                if (!TextUtils.isEmpty(pageObj)) {
+                    String builder = pageObj +
+                            CBASConstants.CBAS_SPLIT_DIAN + CBASConstants.CBAS_CC_SYNCUPDT;
+                    HexinCBASUtil.sendStandardFunctionCbasByClick(builder, false);
+                }
+            }
+        });
+    }
+
+    /**
+     * 是否需要显示同步时间
+     * 如果当前缓存超过12小时的话就显示
+     */
+    private boolean isNeedShowSync() {
+        long syncTime = mHeaderAccount.getLastSyncTime();
+        long currentTime =  ServerTimeProvider.Companion.currentTime();
+        return currentTime - syncTime > SYNC_DELTA_TIME;
+    }
+
+    /**
+     * 获取container
+     * @return container
+     */
+    public HangQingSelfCodeTableContainer getContainer() {
+        ViewParent viewParent = getParent();
+        if (viewParent instanceof HangQingSelfCodeTableContainer) {
+            return (HangQingSelfCodeTableContainer) viewParent;
+        }
+        return null;
+    }
+
+    @Override
+    public void onCategoryChange() {
+        int oldInstanceId = getInstanceId();
+        RequestEmitter.getHqManager().removeBuff(mFrameId, mPageId, oldInstanceId);
+        MiddlewareProxy.unSubscribe(oldInstanceId);
+        mWhenStopPosition = EQConstants.INVALID_INDEX;
+        getContainer().onCategoryChange();
+        removeExtRequest();
+        stockGroupRequest();
+    }
+
+    @Override
+    public void onCategoryGroupChange() {
+        getContainer().onCategoryGroupChanged();
+        onCategoryChange();
+    }
+
+    public void removeExtRequest() {
+        if (getContainer() != null) {
+            getContainer().removeHotStockClient();
+        }
+    }
+
+    /**
+     * 持仓账号改变,主要处理列表页面元素的显示
+     */
+    public void onCCGAccountOrDataChange() {
+        if (!isCCGModel() || mHeaderAccount == null || HexinUtils.isLandscape()) {
+            return;
+        }
+        HangQingSelfCodeTableContainer container = getContainer();
+        final BaseAccount account = mHeaderAccount.getLastAccount();
+        if (container != null) {
+            //当前没有委托账户
+            if (account == null) {
+                mListView.setVisibility(INVISIBLE);
+                container.changeAddStockLayout(false, false, false);
+                return;
+            }
+            boolean isAccountAll = Objects.equals(account.getAccount(), SelfCodeHeaderPresentImpl.ACCOUNT_ALL);
+            boolean noSyncAccount = isAccountAll && ChiCangSyncManagerUtil.getHasSyncAccounts().size() <= 0; //在所有持仓下有没有同步过的账号
+            if (noSyncAccount ||
+                    (!isAccountAll && !account.isSynccc())) {
+                mListView.setVisibility(INVISIBLE);
+                container.changeAddStockLayout(true, false, false);
+            }  else {
+                if (tableStruct == null || tableStruct.getRow() <= 0) {
+                    mListView.setVisibility(INVISIBLE);
+
+                    /*
+                     * 没有数据的情况下，如果当前在汇总选项下，有同步过持仓的账号
+                     */
+                    boolean isAllDataNew = isAccountAll && ChiCangSyncManagerUtil.hasLoginAccount(ChiCangSyncManagerUtil.getHasSyncAccounts());
+                    boolean isAccountDataNew = account.isSynccc() && AccountLifeStateManager.INSTANCE.isAccountLogin(account);
+                    container.changeAddStockLayout(true, isAllDataNew || isAccountDataNew, false);
+                } else {
+                    container.changeAddStockLayout(true, true, true);
+                    if (getSimpleListAdapter() != null) {
+                        mListView.setVisibility(VISIBLE);
+                        mListView.requestLayout();
+                        getSimpleListAdapter().notifyDataSetChanged();
+                    }
+                }
+            }
+        }
+    }
+
+    public void onLandCCGDataChange(BaseAccount account) {
+        HangQingSelfCodeTableContainer container = getContainer();
+        Log.i(TAG, "onLandCCGDataChange Account" + account);
+        if (tableStruct != null && tableStruct.getRow() > 0 && isAccountDataAccess(account)
+                && CommonUtils.isNetWorking(HexinApplication.getHxApplication())) {
+            if (getSimpleListAdapter() != null) {
+                mListView.setVisibility(VISIBLE);
+                mListView.requestLayout();
+                getSimpleListAdapter().notifyDataSetChanged();
+            }
+            container.mLLAddStock.setVisibility(GONE);
+        } else {
+            mListView.setVisibility(INVISIBLE);
+            container.handleNoCCG();
+        }
+    }
+
+    private boolean isAccountDataAccess(BaseAccount account) {
+        if (account == null) {
+            return false;
+        }
+        boolean isAccountAll = Objects.equals(account.getAccount(), SelfCodeHeaderPresentImpl.ACCOUNT_ALL);
+        boolean SyncAccountAll = isAccountAll && ChiCangSyncManagerUtil.getHasSyncAccounts().size() > 0; //在所有持仓下有同步过的账号
+        boolean SyncAccount = !isAccountAll && account.isSynccc(); //在所有持仓下有同步过的账号
+
+        Log.d(TAG, "onLandCCGDataChange isAccountDataAccess" +
+                "isAccountAll" + isAccountAll + "SyncAccountAll"+ SyncAccountAll + "SyncAccount" + SyncAccount);
+        return SyncAccount || SyncAccountAll;
+    }
+
+    @Override
+    public void refreshChiCang() {
+        if (mHeaderAccount != null && MiddlewareProxy.getCurrentPageId() == this.mFrameId) {
+            //成交回报监听，更新持仓股
+            mHeaderAccount.syncChiCang(mHeaderAccount.getLastAccount());
+        }
+    }
+
+    private boolean isVisibleForDynamicGroup(boolean visible) {
+        if (MiddlewareProxy.isUserInfoTemp() && isDynamic()) {
+            visible = mBanKuaiModel.getMobileDgStockList() == null || mBanKuaiModel.getMobileDgStockList().size() == 0;
+        }
+
+        if (!MiddlewareProxy.isUserInfoTemp() && isDynamic()) {
+            visible = mBanKuaiModel.getMobileDgStockList() == null || mBanKuaiModel.getMobileDgStockList().size() <= 0;
+        }
+        return visible;
+    }
+
+    @Override
+    public void pcHeadCallBack() {
+        Log.d(TAG, "pcHeadCallBack, called");
+        post(() -> {
+            isFromBackGroundRequest = true;
+            List<BaseHead> list = RepositoryInstanceHolder.INSTANCE.getMobileSupportHead();
+            if(CommonKt.getTableHeadSwitch()) {
+                onBackground();
+                MiddlewareProxy.clearRequestPageList();
+                onForeground();
+                request(true);
+            }else {
+                refresh(list);
+            }
+        });
+
+    }
+
+    private void refresh(List<BaseHead> list) {
+        boolean isChange = isHeadsChange(list);
+        Log.d(TAG, " pcHead callBack  head isChange  " + isChange);
+        if (isChange) {
+            if (Log.isLogOpen()) {
+                printHeadList(list);
+                Log.d(TAG, " pcHead callBack split --- top is server ---  bottom is local ----- ");
+                printHeadList(mShowHeaders);
+            }
+            onForeground();
+            MiddlewareProxy.unSubscribe(getInstanceId());
+            request(true);
+        }
+    }
+
+    protected boolean isHeadsChange(@NonNull List<BaseHead> newHeaders) {
+        int serverSize = newHeaders.size();
+        //因为mHeadRequest里加入了两个默认的表头，且加在最后面，因此比较时只需要比较前面的表头是否完全一样即可
+        boolean isChange = serverSize != mShowHeaders.size() - DEFAULT_HEAD_SIZE;
+        if (!isChange) {
+            for (int i = 0; i < serverSize; i++) {
+                BaseHead serverHead = newHeaders.get(i);
+                BaseHead currentHead = mShowHeaders.get(i);
+                if (serverHead.getId() != currentHead.getId()) {
+                    isChange = true;
+                    break;
+                }
+            }
+        }
+        return isChange;
+    }
+
+    private void printHeadList(List<BaseHead> list) {
+        if (list != null) {
+            for (BaseHead head : list) {
+                Log.d(TAG, " printHeadList   " + head.getName() + " " + head.getId());
+            }
+        }
+    }
+
+    @Override
+    public void onAddSelfHeadDataUpdate() {
+        if (!isInScroll) {
+            refreshData();
+        }
+    }
+
+    // ~ 静态方法区块
+    // =========================================================================
+
+    // ~ 内部接口（类）区块
+    private static class HQRowData {
+        public String[] values;
+        public int[] colors;
+        public int type;
+        public String market;
+    }
+
+    private class SelfcodeListItemLongClickListener implements OnHexinItemLongClickListener {
+
+        @Override
+        public boolean onHexinItemLongClick(View childView, int position) {
+            return performItemLongClick(childView, position);
+        }
+    }
+
+    @Override
+    public void parseRuntimeParam(EQParam param) {
+        super.parseRuntimeParam(param);
+        mPresenter.parseRuntimeParam(param);
+    }
+
+    @Override
+    protected boolean getItemClickAble() {
+        return CommonUtils.isTalkBackOpened(getContext());
+    }
+    // =========================================================================
+
+    private final int MAX_WAIT_HANDLE_SCROLL_X;
+    private int mUnhandledScrollX = 0;
+    @Override
+    public void onHorizontalScrolled(int scrollX) {
+        mUnhandledScrollX += scrollX;
+        if (Math.abs(mUnhandledScrollX) < MAX_WAIT_HANDLE_SCROLL_X || listview == null) {
+            return;
+        }
+        mUnhandledScrollX = 0;
+        int childCount = listview.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            listview.getChildAt(i).invalidate();
+        }
+    }
+
+    @Override
+    public void onScrollStateChanged(int scrollState) {
+        Log.d(TAG, "onScrollStateChanged: " + scrollState);
+        if (scrollState == SCROLL_STATE_IDLE) {
+            if (mRequestHelper.updateRequestHeaderIfNeed()) {
+                mIDs = mRequestHelper.buildRequestIds();
+                int oldInstanceId = getInstanceId();
+                RequestEmitter.getHqManager().removeBuff(mFrameId, mPageId, oldInstanceId);
+                MiddlewareProxy.unSubscribe(oldInstanceId);
+                //左右滚动
+                sWencaiHeadDataManager.removeResendRequest();
+                stockGroupRequest();
+            }
+            // 小于0说明是从分时预览滑到自选页面，不发送埋点
+            if (mLastListViewScrollX < 0) {
+                return;
+            }
+            if (mLastListViewScrollX < listview.getItemScrollX()) {
+                HexinCBASUtil.sendStandardFunctionCbasBySlide(getPageObj(mBanKuaiModel) +
+                        CBASConstants.CBAS_SELF_HEADER_KYC_SCROLL_TO_LEFT, false);
+            }
+            if (!mHadSendScrollToLeftLimitCBAS && listview.getAvailableToScroll() == 0) {
+                mHadSendScrollToLeftLimitCBAS = true;
+                HexinCBASUtil.sendStandardFunctionCbasBySlide(getPageObj(mBanKuaiModel) +
+                        CBASConstants.CBAS_SELF_HEADER_KYC_SCROLL_TO_LEFT_LIMIT, false);
+            }
+            mLastListViewScrollX = -1;
+        } else if (scrollState == SCROLL_STATE_TOUCH_SCROLL) {
+            if (!(listview instanceof SelfStockListView) || !((SelfStockListView) listview).isInFenshi()) {
+                mLastListViewScrollX = listview.getItemScrollX();
+            }
+        }
+    }
+
+    public String getScreenShotCbas() {
+        return EQConstants.INVALID_STR_VALUE;
+    }
+
+    private void setWencaiSort(boolean isWencaiSort) {
+        this.isWencaiSort = isWencaiSort;
+        MultiStockProcessor.getInstance().setSortWay(isWencaiSort);
+    }
+
+}
